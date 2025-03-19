@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vcc"
+description = "VdvCoundCore - Backend System for VdvCount"
+authors = [{ name = "Sebastian Knopf", email = "mail@sebastian-knopf.de" }]
+readme = "README.md"
+license = {text = "Apache License (2.0)"}
+version="0.0.1"
+dependencies = [
+    "click",
+    "schedule",
+    "pytz",
+    "pyyaml"
+]
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+vdv452import = [
+    "sqlobject",
+    "mysqlclient"
+]
+
+vdvmdimport = [
+    "sqlobject",
+    "mysqlclient"
+]
+
+api = [
+    "sqlobject",
+    "mysqlclient",
+    "fastapi",
+    "uvicorn"
+]
+
+all = [
+    "vcc[vdv452import,api]"
+]

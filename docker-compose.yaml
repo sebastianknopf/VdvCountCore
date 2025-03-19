@@ -1,0 +1,106 @@
+services:
+  vcc-database:
+    image: mysql:latest
+    container_name: vcc-database
+    restart: unless-stopped
+    networks:
+      - vcc
+    expose:
+      - "3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: passwd
+      MYSQL_DATABASE: vccdb
+      MYSQL_USER: vccuser
+      MYSQL_PASSWORD: vccpasswd
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 20s
+      timeout: 5s
+  vcc-proxy:
+    image: httpd:2.4
+    container_name: vcc-proxy
+    restart: unless-stopped
+    networks:
+      - vcc
+    ports:
+      - "80:80"
+    entrypoint: ["/bin/sh", "-c", "
+      htpasswd -bc /usr/local/apache2/conf/.htpasswd ${VCC_USERNAME} ${VCC_PASSWORD} &&
+      echo 'Include /usr/local/apache2/conf/extra/httpd-vcc-proxy.conf' >> /usr/local/apache2/conf/httpd.conf && 
+      httpd-foreground"]
+    environment:
+      - VCC_USERNAME
+      - VCC_PASSWORD
+    volumes:
+      - ./src/vccproxy/httpd-vcc-proxy.conf:/usr/local/apache2/conf/extra/httpd-vcc-proxy.conf:ro
+    depends_on:
+      - vcc-api
+  vcc-vdv452-import:
+    build:
+      context: .
+      dockerfile: ./src/vccvdv452import/Dockerfile
+    container_name: vcc-vdv452-import
+    restart: unless-stopped
+    networks:
+      - vcc
+    environment:
+      - VCC_DEBUG
+      - VCC_VDV452_IMPORT_INTERVAL
+      - VCC_VDV452_ADAPTER
+    volumes:
+      - ${VCC_VDV452_IMPORT_DIRECTORY}:/data
+    depends_on:
+      "vcc-database":
+        condition: service_healthy
+  vcc-md-import:
+    build:
+      context: .
+      dockerfile: ./src/vccmdimport/Dockerfile
+    container_name: vcc-md-import
+    restart: unless-stopped
+    networks:
+      - vcc
+    environment:
+      - VCC_DEBUG
+      - VCC_MD_IMPORT_INTERVAL
+    depends_on:
+      "vcc-database":
+        condition: service_healthy
+  vcc-api:
+    build:
+      context: .
+      dockerfile: ./src/vccapi/Dockerfile
+    container_name: vcc-api
+    restart: unless-stopped
+    networks:
+      - vcc
+    expose:
+      - "8080"
+    environment:
+      - VCC_DEBUG
+      - VCC_USERNAME
+      - VCC_PASSWORD
+    volumes:
+      - ${VCC_API_DATA_DIRECTORY}:/data
+    depends_on:
+      "vcc-database":
+        condition: service_healthy
+  vcc-vdv457-export:
+    build:
+      context: .
+      dockerfile: ./src/vccvdv457export/Dockerfile
+    container_name: vcc-vdv457-export
+    restart: unless-stopped
+    networks:
+      - vcc
+    environment:
+      - VCC_DEBUG
+      - VCC_VDV457_EXPORT_INTERVAL
+    volumes:
+      - ${VCC_VDV457_EXPORT_DATA_DIRECORY}:/data
+    depends_on:
+      "vcc-database":
+        condition: service_healthy
+
+networks:
+  vcc:
