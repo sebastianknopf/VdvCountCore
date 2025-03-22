@@ -1,4 +1,6 @@
 import json
+import logging
+import os
 
 from datetime import datetime
 from io import BytesIO
@@ -95,6 +97,21 @@ async def results_post(guid, request: Request):
 
 @app.get('/system/setup')
 async def system_setup():
+    # load data of environment variables and generate setup config
+    api_scheme = os.getenv('VCC_API_SCHEME', 'http')
+    api_hostname = os.getenv('VCC_API_HOSTNAME', 'localhost')
+
+    vcc_username = os.getenv('VCC_USERNAME', None)
+    vcc_password = os.getenv('VCC_PASSWORD', None)
+
+    if vcc_username is None or vcc_password is None:
+        logging.error('Either environment variable VCC_USERNAME or VCC_PASSWORD not configured!')
+        return Response(status_code=500)
+    
+    setup_config = [f"{api_scheme}://{api_hostname}/", vcc_username, vcc_password]
+    setup_config = '#'.join(setup_config)
+    
+    # generate QR code response
     qr = QRCode(
         version=1,
         error_correction=constants.ERROR_CORRECT_L,
@@ -102,7 +119,7 @@ async def system_setup():
         border=4
     )
 
-    qr.add_data("http://localhost/test")
+    qr.add_data(setup_config)
     qr.make(fit=True)
 
     img = qr.make_image(fill="black", back_color="white")
