@@ -1,5 +1,9 @@
+import json
+
 from datetime import datetime
-from fastapi import FastAPI
+from io import BytesIO
+from fastapi import FastAPI, Request, Response
+from qrcode import QRCode, constants
 
 from vcclib import database
 from vcclib.model import Stop
@@ -79,13 +83,34 @@ async def masterdata_vehicles():
 async def masterdata_objectclasses():
     return [sqlobject2dict(o) for o in MasterDataObjectClass.select()]
 
-@app.post('/results/post')
-async def results_post():
-    pass
+@app.post('/results/post/{guid}')
+async def results_post(guid, request: Request):
+    
+    data = await request.json()
+
+    with open(f"/data/{guid}.json", 'w+') as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
+
+    return Response(status_code=200)
 
 @app.get('/system/setup')
 async def system_setup():
-    pass
+    qr = QRCode(
+        version=1,
+        error_correction=constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4
+    )
+
+    qr.add_data("http://localhost/test")
+    qr.make(fit=True)
+
+    img = qr.make_image(fill="black", back_color="white")
+    imgio = BytesIO()
+    img.save(imgio, format="PNG")
+    imgio.seek(0)
+
+    return Response(content=imgio.getvalue(), media_type="image/png")
 
 @app.get('/system/health')
 async def system_health():

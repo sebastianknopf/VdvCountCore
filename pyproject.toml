@@ -32,6 +32,7 @@ api = [
     "sqlobject",
     "mysqlclient",
     "fastapi",
+    "qrcode[pil]",
     "uvicorn"
 ]
 
