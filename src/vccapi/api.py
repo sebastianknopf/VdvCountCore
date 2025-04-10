@@ -136,5 +136,5 @@ async def system_health():
     
     
     return {
-        'timestamp': int(datetime.now(pytz.timezone('Europe/Berlin')).timestamp())
+        'timestamp': int(datetime.now().astimezone((pytz.timezone('Europe/Berlin')).timestamp())
     }
