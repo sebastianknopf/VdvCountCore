@@ -23,7 +23,7 @@ services:
     networks:
       - vcc
     ports:
-      - "80:80"
+      - "${VCC_API_PORT}:443"
     entrypoint: ["/bin/sh", "-c", "
       htpasswd -bc /usr/local/apache2/conf/.htpasswd ${VCC_USERNAME} ${VCC_PASSWORD} &&
       echo 'Include /usr/local/apache2/conf/extra/httpd-vcc-proxy.conf' >> /usr/local/apache2/conf/httpd.conf && 
@@ -33,6 +33,9 @@ services:
       - VCC_PASSWORD
     volumes:
       - ./src/vccproxy/httpd-vcc-proxy.conf:/usr/local/apache2/conf/extra/httpd-vcc-proxy.conf:ro
+      - ${VCC_PROXY_SSL_CERT_FILENAME}:/etc/ssl/certs/cert.crt
+      - ${VCC_PROXY_SSL_CHAIN_FILEMAME}:/etc/ssl/certs/chain.crt
+      - ${VCC_PROXY_SSL_KEY_FILENAME}:/etc/ssl/private/key.key
     depends_on:
       - vcc-api
   vcc-vdv452-import:
