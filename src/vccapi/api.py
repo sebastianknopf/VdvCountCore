@@ -110,8 +110,7 @@ async def system_setup():
         logging.error('Either environment variable VCC_USERNAME or VCC_PASSWORD not configured!')
         return Response(status_code=500)
     
-    setup_config = [f"{api_scheme}://{vcc_username}:{vcc_password}@{api_hostname}:{api_port}/", vcc_username, vcc_password]
-    setup_config = '#'.join(setup_config)
+    setup_config = f"{api_scheme}://{vcc_username}:{vcc_password}@{api_hostname}:{api_port}/"
     
     # generate QR code response
     qr = QRCode(
@@ -132,9 +131,7 @@ async def system_setup():
     return Response(content=imgio.getvalue(), media_type="image/png")
 
 @app.get('/system/health')
-async def system_health():
-    
-    
+async def system_health():    
     return {
         'timestamp': int(datetime.now().astimezone((pytz.timezone('Europe/Berlin'))).timestamp())
     }
