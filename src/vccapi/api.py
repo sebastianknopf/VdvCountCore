@@ -131,7 +131,10 @@ async def system_setup():
     return Response(content=imgio.getvalue(), media_type="image/png")
 
 @app.get('/system/health')
-async def system_health():    
+async def system_health():  
+    
+    vcc_timezone = os.getenv('VCC_TIMEZONE', 'Europe/Berlin')
+
     return {
-        'timestamp': int(datetime.now().astimezone((pytz.timezone('Europe/Berlin'))).timestamp())
+        'timestamp': int(datetime.now().astimezone((pytz.timezone(vcc_timezone))).timestamp())
     }
