@@ -83,6 +83,9 @@ services:
       - VCC_DEBUG
       - VCC_USERNAME
       - VCC_PASSWORD
+      - VCC_API_SCHEME
+      - VCC_API_HOSTNAME
+      - VCC_API_PORT
     volumes:
       - ${VCC_API_DATA_DIRECTORY}:/data
     depends_on:
