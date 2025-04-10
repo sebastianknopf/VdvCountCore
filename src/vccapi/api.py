@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import pytz
 
 from datetime import datetime
 from io import BytesIO
@@ -132,6 +133,8 @@ async def system_setup():
 
 @app.get('/system/health')
 async def system_health():
+    
+    
     return {
-        'timestamp': int(datetime.now().timestamp())
+        'timestamp': int(datetime.now(pytz.timezone('Europe/Berlin')).timestamp())
     }
