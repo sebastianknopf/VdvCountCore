@@ -119,7 +119,8 @@ class DefaultAdapter(BaseAdapter):
                     if line_id not in line_index:
                         line_index[line_id] = Line(
                             line_id=line_id, 
-                            name=name, 
+                            name=name,
+                            international_id=international_id, 
                             connection=transaction
                         )
 
