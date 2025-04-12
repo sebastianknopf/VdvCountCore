@@ -7,9 +7,9 @@ def directory_contains_files(directory: str) -> bool:
     with os.scandir(directory) as entries:
         return any(e.is_file() for e in entries)
     
-def archive_directory_files(directory: str) -> None:
+def archive_directory_files(directory: str, defective: bool = False) -> None:
     if directory_contains_files(directory):
-        archive_directory = os.path.join(directory, 'Archive', datetime.now().strftime('%Y%m%d%H%M%S'))
+        archive_directory = os.path.join(directory, 'Archive' if not defective else 'Defective', datetime.now().strftime('%Y%m%d%H%M%S'))
         os.makedirs(archive_directory)
 
         with os.scandir(directory) as entries:
