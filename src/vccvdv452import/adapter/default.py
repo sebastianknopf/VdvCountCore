@@ -83,6 +83,7 @@ class DefaultAdapter(BaseAdapter):
 
                 except Exception as ex:
                     transaction.rollback()
+                    transaction_count = 0
 
                     if not i >= len(x10_rec_ort.records):
                         transaction = database.connection().transaction()
@@ -132,6 +133,7 @@ class DefaultAdapter(BaseAdapter):
 
                 except Exception as ex:
                     transaction.rollback()
+                    transaction_count = 0
 
                     if not i >= len(x10_rec_lid.records) - 1:
                         transaction = database.connection().transaction()
@@ -303,6 +305,7 @@ class DefaultAdapter(BaseAdapter):
 
                 except Exception as ex:
                     transaction.rollback()
+                    transaction_count = 0
 
                     if not i >= len(x10_rec_frt.records) - 1:
                         transaction = database.connection().transaction()
@@ -310,7 +313,7 @@ class DefaultAdapter(BaseAdapter):
                     logging.exception(ex)
                     error_raised = True
 
-            logging.info(f"Imported {len(trip_index)} unique trips for operation day {datetime.now().strftime('%Y%m%d')}")
+            logging.info(f"Found {len(trip_index)} unique trips for operation day {datetime.now().strftime('%Y%m%d')}")
         
             # put every imported file from this import into archive
             logging.info("Archiving imported files ...")
