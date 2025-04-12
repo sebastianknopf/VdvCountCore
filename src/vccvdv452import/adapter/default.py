@@ -43,35 +43,44 @@ class DefaultAdapter(BaseAdapter):
 
         x10_rec_ort = self._internal_read_x10_file(input_directory, 'rec_ort.x10')
         for i, record in enumerate(x10_rec_ort.records):
-            if record['ONR_TYP_NR'] == 1:
-                stop_id = record['ORT_NR']
-                name = record['ORT_REF_ORT_NAME']
-                latitude = self._convert_coordinate(record['ORT_POS_BREITE'])
-                longitude = self._convert_coordinate(record['ORT_POS_LAENGE'])
-                parent_id = record['ORT_REF_ORT']
+            try:
+                if record['ONR_TYP_NR'] == 1:
+                    stop_id = record['ORT_NR']
+                    name = record['ORT_REF_ORT_NAME']
+                    latitude = self._convert_coordinate(record['ORT_POS_BREITE'])
+                    longitude = self._convert_coordinate(record['ORT_POS_LAENGE'])
+                    parent_id = record['ORT_REF_ORT']
 
-                if 'HST_NR_INTERNATIONAL' in record:
-                    international_id = record['HST_NR_INTERNATIONAL']
-                elif 'ORT_GLOBAL_ID' in record:
-                    international_id = record['ORT_GLOBAL_ID']
-                else:
-                    international_id = None
+                    if 'HST_NR_INTERNATIONAL' in record:
+                        international_id = record['HST_NR_INTERNATIONAL']
+                    elif 'ORT_GLOBAL_ID' in record:
+                        international_id = record['ORT_GLOBAL_ID']
+                    else:
+                        international_id = None
 
-                stop_index[stop_id] = Stop(
-                    stop_id=stop_id,
-                    name=name,
-                    latitude=latitude,
-                    longitude=longitude,
-                    international_id=international_id,
-                    parent_id=parent_id,
-                    connection=transaction
-                )
+                    stop_index[stop_id] = Stop(
+                        stop_id=stop_id,
+                        name=name,
+                        latitude=latitude,
+                        longitude=longitude,
+                        international_id=international_id,
+                        parent_id=parent_id,
+                        connection=transaction
+                    )
 
-            if transaction_count >= batch_size or i == len(x10_rec_ort.records) - 1:
-                transaction.commit()
+                if transaction_count >= batch_size or i >= len(x10_rec_ort.records) - 1:
+                    transaction.commit()
 
-                transaction = database.connection().transaction()
-                transaction_count = 0
+                    transaction = database.connection().transaction()
+                    transaction_count = 0
+
+            except Exception as ex:
+                transaction.rollback()
+
+                if not i >= len(x10_rec_ort.records):
+                    transaction = database.connection().transaction()
+
+                logging.exception(ex)
 
         x10_rec_ort.close()
 
@@ -84,33 +93,42 @@ class DefaultAdapter(BaseAdapter):
 
         x10_rec_lid = self._internal_read_x10_file(input_directory, 'rec_lid.x10')
         for i, record in enumerate(x10_rec_lid.records):
-            line_id = record['LI_NR']
-            line_variant_id = record['STR_LI_VAR']
-            direction = record['LI_RI_NR']
-            name = record['LI_KUERZEL']
-            
-            if 'LinienID' in record:
-                international_id = record['LinienID']
-            else:
-                international_id = None
+            try:
+                line_id = record['LI_NR']
+                line_variant_id = record['STR_LI_VAR']
+                direction = record['LI_RI_NR']
+                name = record['LI_KUERZEL']
+                
+                if 'LinienID' in record:
+                    international_id = record['LinienID']
+                else:
+                    international_id = None
 
-            if (line_id, line_variant_id) not in line_direction_index:
-                line_direction_index[(line_id, line_variant_id)] = direction
+                if (line_id, line_variant_id) not in line_direction_index:
+                    line_direction_index[(line_id, line_variant_id)] = direction
 
-            if line_id not in line_index:
-                line_index[line_id] = Line(
-                    line_id=line_id, 
-                    name=name, 
-                    connection=transaction
-                )
+                if line_id not in line_index:
+                    line_index[line_id] = Line(
+                        line_id=line_id, 
+                        name=name, 
+                        connection=transaction
+                    )
 
-                transation_count = transation_count + 1
+                    transation_count = transation_count + 1
 
-            if transation_count >= batch_size or i == len(x10_rec_lid.records) - 1:
-                transaction.commit()
+                if transation_count >= batch_size or i >= len(x10_rec_lid.records) - 1:
+                    transaction.commit()
 
-                transaction = database.connection().transaction()
-                transation_count = 0
+                    transaction = database.connection().transaction()
+                    transation_count = 0
+
+            except Exception as ex:
+                transaction.rollback()
+
+                if not i >= len(x10_rec_lid.records) - 1:
+                    transaction = database.connection().transaction()
+
+                logging.exception(ex)
     
         x10_rec_lid.close()
 
@@ -214,63 +232,73 @@ class DefaultAdapter(BaseAdapter):
 
         x10_rec_frt = self._internal_read_x10_file(input_directory, 'rec_frt.x10')
         for i, record in enumerate(x10_rec_frt.records):
-            if record['TAGESART_NR'] == daytype:
+            try:
+                if record['TAGESART_NR'] == daytype:
 
-                trip_id = record['FRT_FID']
-                line_id = record['LI_NR']
-                international_id = None
+                    trip_id = record['FRT_FID']
+                    line_id = record['LI_NR']
+                    international_id = None
 
-                _line_variant_id = record['STR_LI_VAR']
-                _tdt_id = record['FGR_NR']
-                _last_timestamp = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()) + record['FRT_START']
-                _intermediate_stops = line_route_index[(line_id, _line_variant_id)]
+                    _line_variant_id = record['STR_LI_VAR']
+                    _tdt_id = record['FGR_NR']
+                    _last_timestamp = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()) + record['FRT_START']
+                    _intermediate_stops = line_route_index[(line_id, _line_variant_id)]
 
-                direction = line_direction_index[(line_id, _line_variant_id)]
+                    direction = line_direction_index[(line_id, _line_variant_id)]
 
-                trip = Trip(
-                    trip_id=trip_id, 
-                    line=line_index[line_id],
-                    direction=direction,
-                    international_id=international_id,
-                    connection=transaction
-                )
-
-                for s in range(0, len(_intermediate_stops)):
-                    stop_id = _intermediate_stops[s]
-                    arrival_timestamp = _last_timestamp
-                    departure_timestamp = arrival_timestamp
-
-                    if _tdt_id in stop_waiting_time_index and stop_id in stop_waiting_time_index[_tdt_id]:
-                        departure_timestamp = departure_timestamp + stop_waiting_time_index[_tdt_id][stop_id]
-
-                    if trip_id in trip_waiting_time_index and stop_id in trip_waiting_time_index[trip_id]:
-                        departure_timestamp = departure_timestamp + trip_waiting_time_index[trip_id][stop_id]
-
-                    StopTime(
-                        stop=stop_index[stop_id],
-                        trip=trip,
-                        arrival_timestamp=arrival_timestamp,
-                        departure_timestamp=departure_timestamp,
-                        sequence=s + 1,
+                    trip = Trip(
+                        trip_id=trip_id, 
+                        line=line_index[line_id],
+                        direction=direction,
+                        international_id=international_id,
                         connection=transaction
                     )
 
-                    if s < len(_intermediate_stops) - 1:
-                        next_stop_id = _intermediate_stops[s + 1]
-                        _last_timestamp = departure_timestamp + time_demand_type_index[_tdt_id][stop_id][next_stop_id]
+                    for s in range(0, len(_intermediate_stops)):
+                        stop_id = _intermediate_stops[s]
+                        arrival_timestamp = _last_timestamp
+                        departure_timestamp = arrival_timestamp
 
-                trip.headsign = stop_index[_intermediate_stops[-1]].name
+                        if _tdt_id in stop_waiting_time_index and stop_id in stop_waiting_time_index[_tdt_id]:
+                            departure_timestamp = departure_timestamp + stop_waiting_time_index[_tdt_id][stop_id]
 
-                trip_index[trip.trip_id] = trip
-                transaction_count = transaction_count + 1
+                        if trip_id in trip_waiting_time_index and stop_id in trip_waiting_time_index[trip_id]:
+                            departure_timestamp = departure_timestamp + trip_waiting_time_index[trip_id][stop_id]
 
-            if transaction_count >= batch_size or i >= len(x10_rec_frt.records) - 1:
-                transaction.commit()
+                        StopTime(
+                            stop=stop_index[stop_id],
+                            trip=trip,
+                            arrival_timestamp=arrival_timestamp,
+                            departure_timestamp=departure_timestamp,
+                            sequence=s + 1,
+                            connection=transaction
+                        )
 
-                logging.info(f"Imported batch of {transaction_count} trips")
+                        if s < len(_intermediate_stops) - 1:
+                            next_stop_id = _intermediate_stops[s + 1]
 
-                transaction = database.connection().transaction()
-                transaction_count = 0
+                            _last_timestamp = departure_timestamp + time_demand_type_index[_tdt_id][stop_id][next_stop_id]
+
+                    trip.headsign = stop_index[_intermediate_stops[-1]].name
+
+                    trip_index[trip.trip_id] = trip
+                    transaction_count = transaction_count + 1
+
+                if transaction_count >= batch_size or i >= len(x10_rec_frt.records) - 1:
+                    transaction.commit()
+
+                    logging.info(f"Imported batch of {transaction_count} trips")
+
+                    transaction = database.connection().transaction()
+                    transaction_count = 0
+
+            except Exception as ex:
+                transaction.rollback()
+
+                if not i >= len(x10_rec_frt.records) - 1:
+                    transaction = database.connection().transaction()
+
+                logging.exception(ex)
 
         logging.info(f"Imported {len(trip_index)} unique trips for operation day {datetime.now().strftime('%Y%m%d')}")
     
