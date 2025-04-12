@@ -298,6 +298,11 @@ class DefaultAdapter(BaseAdapter):
             raise FileNotFoundError(f"Required file {x10_rec_frt_filename} not found")
 
     def _internal_read_x10_file(self, input_directory: str, x10filename: str) -> X10File:
+        for entry in os.listdir(input_directory):
+            if entry.lower() == x10filename.lower():
+                x10filename = entry
+                break
+        
         x10filename = os.path.join(input_directory, x10filename)
 
         if not os.path.exists(x10filename) or not os.path.isfile(x10filename):
