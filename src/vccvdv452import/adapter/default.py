@@ -8,6 +8,8 @@ from vcclib.model import Stop
 from vcclib.model import Line
 from vcclib.model import Trip
 from vcclib.model import StopTime
+from vcclib.filesystem import archive_directory_files
+from vcclib.filesystem import directory_contains_files
 from vcclib.x10 import read_x10_file, X10File
 from vccvdv452import.adapter.base import BaseAdapter
 
@@ -302,8 +304,18 @@ class DefaultAdapter(BaseAdapter):
 
         logging.info(f"Imported {len(trip_index)} unique trips for operation day {datetime.now().strftime('%Y%m%d')}")
     
+        # put every imported file from this import into archive
+        logging.info("Archiving imported files ...")
+        archive_directory_files(input_directory)
+
     def _verify(self, input_directory:str) -> None:
         logging.info(f"Verifying files in input directory {input_directory} ...")
+
+        if not os.path.isdir(input_directory):
+            raise ValueError(f"Input directory {input_directory} is no directory!")
+        
+        if not directory_contains_files(input_directory):
+            raise ValueError(f"Input directory {input_directory} is empty!")
 
         x10_rec_ort_filename = os.path.join(input_directory, 'rec_ort.x10')
         if not os.path.exists(x10_rec_ort_filename) or not os.path.isfile(x10_rec_ort_filename):
@@ -324,7 +336,7 @@ class DefaultAdapter(BaseAdapter):
         x10_rec_frt_filename = os.path.join(input_directory, 'rec_frt.x10')
         if not os.path.exists(x10_rec_frt_filename) or not os.path.isfile(x10_rec_frt_filename):
             raise FileNotFoundError(f"Required file {x10_rec_frt_filename} not found")
-
+    
     def _internal_read_x10_file(self, input_directory: str, x10filename: str) -> X10File:
         for entry in os.listdir(input_directory):
             if entry.lower() == x10filename.lower():
