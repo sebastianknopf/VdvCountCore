@@ -8,7 +8,6 @@ from vcclib.model import Stop
 from vcclib.model import Line
 from vcclib.model import Trip
 from vcclib.model import StopTime
-from vcclib.filesystem import archive_directory_files
 from vcclib.filesystem import directory_contains_files
 from vcclib.x10 import read_x10_file, X10File
 from vccvdv452import.adapter.base import BaseAdapter
@@ -36,9 +35,6 @@ class DefaultAdapter(BaseAdapter):
         StopTime.deleteMany(where=None)
 
         try:
-            # keep track of every error to archive import files correctly
-            error_raised = False
-
             # load network data ...
             logging.info('Loading network data ...')
 
@@ -89,7 +85,6 @@ class DefaultAdapter(BaseAdapter):
                         transaction = database.connection().transaction()
 
                     logging.exception(ex)
-                    error_raised = True
 
             x10_rec_ort.close()
 
@@ -140,7 +135,6 @@ class DefaultAdapter(BaseAdapter):
                         transaction = database.connection().transaction()
 
                     logging.exception(ex)
-                    error_raised = True
         
             x10_rec_lid.close()
 
@@ -312,19 +306,11 @@ class DefaultAdapter(BaseAdapter):
                         transaction = database.connection().transaction()
 
                     logging.exception(ex)
-                    error_raised = True
 
             logging.info(f"Found {len(trip_index)} unique trips for operation day {datetime.now().strftime('%Y%m%d')}")
         
-            # put every imported file from this import into archive
-            logging.info("Archiving imported files ...")
-            archive_directory_files(input_directory, error_raised)
-        
         except Exception as ex:
-
             logging.exception(ex)
-            logging.info("Archiving imported files ...")
-            archive_directory_files(input_directory)
 
     def _verify(self, input_directory:str) -> bool:
         logging.info(f"Verifying files in input directory {input_directory} ...")
