@@ -107,7 +107,7 @@ class DefaultAdapter(BaseAdapter):
                     line_id = record['LI_NR']
                     line_variant_id = record['STR_LI_VAR']
                     direction = record['LI_RI_NR']
-                    name = record['LI_KUERZEL']
+                    name = record['LIDNAME']
                     
                     if 'LinienID' in record:
                         international_id = record['LinienID']
