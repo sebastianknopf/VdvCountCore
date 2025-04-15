@@ -57,7 +57,7 @@ class Stop(SQLObject):
     def departures(cls, parent_stop_id:int):
         stops = cls.select(Stop.q.parent_id == parent_stop_id)
 
-        return StopTime.select((IN(StopTime.q.stop, stops)) & (StopTime.q.departure_timestamp is not None)).orderBy(StopTime.q.departure_timestamp)
+        return StopTime.select((IN(StopTime.q.stop, stops)) & (StopTime.q.departure_timestamp != None)).orderBy(StopTime.q.departure_timestamp)
 
 class Line(SQLObject):
     line_id = IntCol()
