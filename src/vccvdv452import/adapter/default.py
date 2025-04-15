@@ -284,6 +284,9 @@ class DefaultAdapter(BaseAdapter):
                             if trip_id in trip_waiting_time_index and stop_id in trip_waiting_time_index[trip_id]:
                                 departure_timestamp = departure_timestamp + trip_waiting_time_index[trip_id][stop_id]
 
+                            if s == len(_intermediate_stops) - 1:
+                                departure_timestamp = None
+
                             StopTime(
                                 stop=stop_index[stop_id],
                                 trip=trip,
