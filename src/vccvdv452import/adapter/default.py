@@ -36,6 +36,11 @@ class DefaultAdapter(BaseAdapter):
         StopTime.deleteMany(where=None)
 
         try:
+
+            # load ENV timezone for processing the VDV452 data
+            timezone = os.getenv('VCC_TIMEZONE', 'Europe/Berlin')
+            logging.info(f"Running in timezone {timezone}")
+
             # load network data ...
             logging.info('Loading network data ...')
 
@@ -246,9 +251,16 @@ class DefaultAdapter(BaseAdapter):
                         line_id = record['LI_NR']
                         international_id = None
 
+                        # generate start time of the trip
+                        # note, that the start timestamp of 'today' is already UTC, but the record['FRT_START'] is in local time of the system which has
+                        # exported the data. So we need to convert the whole thing to UTC before proceeding ... see #5 for more information
+                        _start_time_local = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.utc).timestamp()) + record['FRT_START']
+                        _start_time_utc = datetime.fromtimestamp(_start_time_local, tz=pytz.timezone(timezone)).astimezone(pytz.utc)
+
+                        # create working variables
                         _line_variant_id = record['STR_LI_VAR']
                         _tdt_id = record['FGR_NR']
-                        _last_timestamp = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.utc).timestamp()) + record['FRT_START']
+                        _last_timestamp = _start_time_utc
                         _intermediate_stops = line_route_index[(line_id, _line_variant_id)]
 
                         direction = line_direction_index[(line_id, _line_variant_id)]
