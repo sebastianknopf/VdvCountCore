@@ -255,7 +255,7 @@ class DefaultAdapter(BaseAdapter):
                         # note, that the start timestamp of 'today' is already UTC, but the record['FRT_START'] is in local time of the system which has
                         # exported the data. So we need to convert the whole thing to UTC before proceeding ... see #5 for more information
                         _start_time_local = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=pytz.utc).timestamp()) + record['FRT_START']
-                        _start_time_utc = int(datetime.fromtimestamp(_start_time_local, tz=pytz.timezone(timezone)).astimezone(pytz.utc).timestamp)
+                        _start_time_utc = int(datetime.fromtimestamp(_start_time_local, tz=pytz.timezone(timezone)).astimezone(pytz.utc).timestamp())
 
                         # create working variables
                         _line_variant_id = record['STR_LI_VAR']
