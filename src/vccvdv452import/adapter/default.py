@@ -1,5 +1,6 @@
 import logging
 import os
+import pytz
 
 from datetime import datetime
 
@@ -247,7 +248,7 @@ class DefaultAdapter(BaseAdapter):
 
                         _line_variant_id = record['STR_LI_VAR']
                         _tdt_id = record['FGR_NR']
-                        _last_timestamp = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()) + record['FRT_START']
+                        _last_timestamp = int(datetime.now().astimezone(pytz.timezone('UTC')).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()) + record['FRT_START']
                         _intermediate_stops = line_route_index[(line_id, _line_variant_id)]
 
                         direction = line_direction_index[(line_id, _line_variant_id)]
