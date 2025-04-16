@@ -5,12 +5,12 @@ TARGET="$2"
 
 if [[ -z "$TEMPLATE" || -z "$TARGET" ]]; then
     echo "Usage: $0 <template.env> <target.env>"
-    exit
+    return 1
 fi
 
 if [[ ! -f "$TEMPLATE" ]]; then
     echo "Template file '$TEMPLATE' not found."
-    exit
+    return 1
 fi
 
 # extract existing of target
