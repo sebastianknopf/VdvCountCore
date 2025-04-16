@@ -62,10 +62,10 @@ class CsvAdapter(BaseAdapter):
 
         object_class_data = self._internal_read_csv_file(input_directory, 'object_classes.csv')
         for i, record in enumerate(object_class_data):
-            try:
+            try:                
                 MasterDataObjectClass(
                     name=record['name'],
-                    description=int(record['description']),
+                    description=record['description'],
                     connection=transaction
                 )
 
@@ -101,6 +101,8 @@ class CsvAdapter(BaseAdapter):
         csv_object_classes_filename = os.path.join(input_directory, 'object_classes.csv')
         if not os.path.exists(csv_object_classes_filename) or not os.path.isfile(csv_object_classes_filename):
             raise FileNotFoundError(f"Required file {csv_object_classes_filename} not found")
+
+        return True
 
     def _internal_read_csv_file(self, input_directory: str, csv_filename: str) -> dict:
         for entry in os.listdir(input_directory):
