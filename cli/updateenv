@@ -5,21 +5,27 @@ TARGET="$2"
 
 if [[ -z "$TEMPLATE" || -z "$TARGET" ]]; then
     echo "Usage: $0 <template.env> <target.env>"
+    exit
 fi
 
 if [[ ! -f "$TEMPLATE" ]]; then
     echo "Template file '$TEMPLATE' not found."
+    exit
 fi
 
 # extract existing of target
 declare -A TARGET_KEYS
-while IFS= read -r line; do
-    [[ "$line" =~ ^\s*#.*$ || "$line" =~ ^\s*$ ]] && continue
-    if [[ "$line" =~ ^\s*([^=]+)\s*=(.*)$ ]]; then
-        key="${BASH_REMATCH[1]}"
-        TARGET_KEYS["$key"]=1
-    fi
-done < "$TARGET"
+if [[ -f "$TARGET" ]]; then
+    while IFS= read -r line; do
+        [[ "$line" =~ ^\s*#.*$ || "$line" =~ ^\s*$ ]] && continue
+        if [[ "$line" =~ ^\s*([^=]+)\s*=(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            TARGET_KEYS["$key"]=1
+        fi
+    done < "$TARGET"
+else
+    touch "$TARGET"
+fi
 
 # build diff stack
 BLOCK=""
