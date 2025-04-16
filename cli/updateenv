@@ -1,0 +1,56 @@
+#!/bin/bash
+
+TEMPLATE="$1"
+TARGET="$2"
+
+if [[ -z "$TEMPLATE" || -z "$TARGET" ]]; then
+    echo "Usage: $0 <template.env> <target.env>"
+    exit 1
+fi
+
+if [[ ! -f "$TEMPLATE" ]]; then
+    echo "Template file '$TEMPLATE' not found."
+    exit 1
+fi
+
+# extract existing of target
+declare -A TARGET_KEYS
+while IFS= read -r line; do
+    [[ "$line" =~ ^\s*#.*$ || "$line" =~ ^\s*$ ]] && continue
+    if [[ "$line" =~ ^\s*([^=]+)\s*=(.*)$ ]]; then
+        key="${BASH_REMATCH[1]}"
+        TARGET_KEYS["$key"]=1
+    fi
+done < "$TARGET"
+
+# build diff stack
+BLOCK=""
+COLLECTING=false
+ADDED_LINES=""
+
+while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" =~ ^\s*([^=]+)\s*=(.*)$ ]]; then
+        key="${BASH_REMATCH[1]}"
+        if [[ -z "${TARGET_KEYS[$key]}" ]]; then
+            COLLECTING=true
+            BLOCK+="$line"$'\n'
+        else
+            COLLECTING=false
+        fi
+    elif $COLLECTING || [[ "$line" =~ ^\s*$ && -n "$BLOCK" ]]; then
+        BLOCK+="$line"$'\n'
+    fi
+done < "$TEMPLATE"
+
+# if variables are missing, add them to the target
+if [[ -n "$BLOCK" ]]; then
+    TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+    {
+        echo ""
+        echo "# Automatically added on $TIMESTAMP"
+        echo -n "$BLOCK"
+    } >> "$TARGET"
+    echo "Added missing variables in '$TARGET'."
+else
+    echo "Variables already up-to-date. No changes required."
+fi
