@@ -57,7 +57,7 @@ class Stop(SQLObject):
     def departures(cls, parent_stop_id:int):
         stops = cls.select(Stop.q.parent_id == parent_stop_id)
 
-        return StopTime.select(IN(StopTime.q.stop, stops)).orderBy(StopTime.q.departure_timestamp)
+        return StopTime.select((IN(StopTime.q.stop, stops)) & (StopTime.q.departure_timestamp != None)).orderBy(StopTime.q.departure_timestamp)
 
 class Line(SQLObject):
     line_id = IntCol()
@@ -80,7 +80,7 @@ class StopTime(SQLObject):
     trip = ForeignKey('Trip', cascade=True)
     stop = ForeignKey('Stop', cascade=True)
     arrival_timestamp = IntCol()
-    departure_timestamp = IntCol()
+    departure_timestamp = IntCol(default=None)
     sequence = IntCol()
 
 class MasterDataVehicle(SQLObject):
