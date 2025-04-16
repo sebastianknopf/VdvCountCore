@@ -2,7 +2,7 @@ import csv
 
 from vccmdimport.adapter.base import BaseAdapter
 
-class DefaultAdapter(BaseAdapter):
+class CsvAdapter(BaseAdapter):
 
     def __init__(self) -> None:
         pass
