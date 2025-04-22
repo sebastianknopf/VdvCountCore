@@ -1,9 +1,9 @@
 import click
-import croniter
 import os
 import schedule
 import time
 
+from croniter import croniter
 from datetime import datetime
 
 def run():

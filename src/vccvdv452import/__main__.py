@@ -1,10 +1,10 @@
 import click
-import croniter
 import logging
 import os
 import schedule
 import time
 
+from croniter import croniter
 from datetime import datetime
 
 from vcclib import database
