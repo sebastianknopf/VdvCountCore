@@ -12,7 +12,10 @@ def run():
     cron = os.getenv('VCC_MD_IMPORT_INTERVAL', '0 */1 * * *')
 
     if croniter.match(cron, now):
-        print('Main VDV457 Export', flush=True)
+        _run_now()
+
+def _run_now():
+    print('Main VDV457 Export', flush=True)
 
 @click.group()
 def cli():
@@ -22,7 +25,7 @@ def cli():
 def main():
 
     # run main method first time
-    run()
+    _run_now()
 
     # run main method
     schedule.every(1).minutes.do(run)

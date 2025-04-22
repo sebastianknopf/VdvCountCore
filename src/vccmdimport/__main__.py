@@ -18,24 +18,26 @@ def run():
     cron = os.getenv('VCC_MD_IMPORT_INTERVAL', '*/5 * * * *')
 
     if croniter.match(cron, now):
+        _run_now()
 
-        adapter: BaseAdapter = None
+def _run_now():
+    adapter: BaseAdapter = None
 
-        adapter_type = os.getenv('VCC_MD_IMPORT_ADAPTER_TYPE', 'default')
-        if adapter_type == 'default':
-            adapter = DefaultAdapter()
-        elif adapter_type == 'csv':
-            adapter = CsvAdapter()
+    adapter_type = os.getenv('VCC_MD_IMPORT_ADAPTER_TYPE', 'default')
+    if adapter_type == 'default':
+        adapter = DefaultAdapter()
+    elif adapter_type == 'csv':
+        adapter = CsvAdapter()
+    else:
+        raise ValueError(f"Unknown adapter type {adapter_type}!")
+    
+    try:
+        adapter.process('/data')
+    except Exception as ex:
+        if os.getenv('VCC_DEBUG', '0') == '1':
+            logging.exception(ex)
         else:
-            raise ValueError(f"Unknown adapter type {adapter_type}!")
-        
-        try:
-            adapter.process('/data')
-        except Exception as ex:
-            if os.getenv('VCC_DEBUG', '0') == '1':
-                logging.exception(ex)
-            else:
-                logging.error(str(ex))
+            logging.error(str(ex))
 
 @click.group()
 def cli():
@@ -51,7 +53,7 @@ def main():
     database.init()
     
     # run main method first time
-    run()
+    _run_now()
 
     # run main method
     schedule.every(1).minutes.do(run)
