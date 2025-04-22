@@ -99,6 +99,29 @@ async def results_post(guid, request: Request):
 
     return Response(status_code=200)
 
+@app.post('/logs/post/{device_guid}')
+async def logs_post(device_guid, request: Request):
+    
+    data = await request.body()
+    timestamp = datetime.now().strftime('%Y-%m-%d-%H.%M.%S-%f')
+
+    try:
+        text = data.decode('utf-8')
+
+        if not text.strip():
+            return Response(status_code=400)
+        
+        if not request.headers.get('Content-Type', '').startswith('text/plain'):
+            return Response(status_code=400)
+
+        with open(f"/logs/{timestamp}-{device_guid}.json", 'w+') as file:
+            file.write(text)
+
+    except UnicodeDecodeError:
+        return Response(status_code=400)
+
+    return Response(status_code=200)
+
 @app.get('/system/setup')
 async def system_setup():
     # load data of environment variables and generate setup config
