@@ -10,9 +10,7 @@ from qrcode import QRCode, constants
 
 from vcclib import database
 from vcclib.model import Stop
-from vcclib.model import Line
 from vcclib.model import Trip
-from vcclib.model import StopTime
 from vcclib.model import MasterDataVehicle
 from vcclib.model import MasterDataObjectClass
 
@@ -33,21 +31,25 @@ async def stops_by_name(lookup_name):
 async def departures_by_parent_stop_id(parent_stop_id):
     parent_stop_id = int(parent_stop_id)
 
+    reference_timestamp = datetime.now().timestamp() - 3600
+
     result = list()
     for d in Stop.departures(parent_stop_id):
-        obj = {
-            'stop_id': d.stop.stop_id,
-            'line': sqlobject2dict(d.trip.line),
-            'trip_id': d.trip.trip_id,
-            'direction': d.trip.direction,
-            'headsign': d.trip.headsign,
-            'international_id': d.trip.international_id,
-            'arrival_timestamp': d.arrival_timestamp,
-            'departure_timestamp': d.departure_timestamp,
-            'sequence': d.sequence
-        }
+        if d.departure_timestamp >= reference_timestamp:
+            obj = {
+                'stop_id': d.stop.stop_id,
+                'line': sqlobject2dict(d.trip.line),
+                'trip_id': d.trip.trip_id,
+                'direction': d.trip.direction,
+                'headsign': d.trip.headsign,
+                'international_id': d.trip.international_id,
+                'operation_day': d.trip.operation_day,
+                'arrival_timestamp': d.arrival_timestamp,
+                'departure_timestamp': d.departure_timestamp,
+                'sequence': d.sequence
+            }
 
-        result.append(obj)
+            result.append(obj)
 
     return result
 
@@ -72,6 +74,7 @@ async def trips_by_id(trip_id):
         'direction': trip.direction,
         'headsign': trip.headsign,
         'international_id': trip.international_id,
+        'operation_day': trip.operation_day,
         'next_trip_id': trip.next_trip_id,
         'stop_times': stop_times_result
     }
@@ -80,11 +83,11 @@ async def trips_by_id(trip_id):
 
 @app.get('/masterdata/vehicles')
 async def masterdata_vehicles():
-    return [sqlobject2dict(o) for o in MasterDataVehicle.select()]
+    return [sqlobject2dict(o) for o in MasterDataVehicle.select().orderBy(MasterDataVehicle.q.name)]
 
 @app.get('/masterdata/objectclasses')
 async def masterdata_objectclasses():
-    return [sqlobject2dict(o) for o in MasterDataObjectClass.select()]
+    return [sqlobject2dict(o) for o in MasterDataObjectClass.select().orderBy(MasterDataObjectClass.q.name)]
 
 @app.post('/results/post/{guid}')
 async def results_post(guid, request: Request):
@@ -93,6 +96,29 @@ async def results_post(guid, request: Request):
 
     with open(f"/data/{guid}.json", 'w+') as file:
         json.dump(data, file, ensure_ascii=False, indent=4)
+
+    return Response(status_code=200)
+
+@app.post('/logs/post/{device_guid}')
+async def logs_post(device_guid, request: Request):
+    
+    data = await request.body()
+    timestamp = datetime.now().strftime('%Y-%m-%d-%H.%M.%S-%f')
+
+    try:
+        text = data.decode('utf-8')
+
+        if not text.strip():
+            return Response(status_code=400)
+        
+        if not request.headers.get('Content-Type', '').startswith('text/plain'):
+            return Response(status_code=400)
+
+        with open(f"/logs/{timestamp}-{device_guid}.log", 'w+') as file:
+            file.write(text)
+
+    except UnicodeDecodeError:
+        return Response(status_code=400)
 
     return Response(status_code=200)
 

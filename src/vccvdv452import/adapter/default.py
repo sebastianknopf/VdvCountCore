@@ -10,6 +10,7 @@ from vcclib.model import Line
 from vcclib.model import Trip
 from vcclib.model import StopTime
 from vcclib.filesystem import directory_contains_files
+from vcclib.filesystem import file_exists
 from vcclib.x10 import read_x10_file, X10File
 from vccvdv452import.adapter.base import BaseAdapter
 
@@ -235,7 +236,8 @@ class DefaultAdapter(BaseAdapter):
             x10_rec_frt_hzt.close()
 
             # load and generate trips
-            logging.info('Generating trips ...')
+            operation_day = int(datetime.now().strftime('%Y%m%d'))
+            logging.info(f"Generating trips for operation day {operation_day} ...")
 
             trip_index = dict()
 
@@ -270,6 +272,7 @@ class DefaultAdapter(BaseAdapter):
                             line=line_index[line_id],
                             direction=direction,
                             international_id=international_id,
+                            operation_day=operation_day,
                             connection=transaction
                         )
 
@@ -338,25 +341,20 @@ class DefaultAdapter(BaseAdapter):
             logging.info(f"Input directory {input_directory} is empty!")
             return False
 
-        x10_rec_ort_filename = os.path.join(input_directory, 'rec_ort.x10')
-        if not os.path.exists(x10_rec_ort_filename) or not os.path.isfile(x10_rec_ort_filename):
-            raise FileNotFoundError(f"Required file {x10_rec_ort_filename} not found")
+        if not file_exists(input_directory, 'rec_ort.x10'):
+            raise FileNotFoundError(f"Required file rec_ort.x10 not found")
         
-        x10_rec_lid_filename = os.path.join(input_directory, 'rec_lid.x10')
-        if not os.path.exists(x10_rec_lid_filename) or not os.path.isfile(x10_rec_lid_filename):
-            raise FileNotFoundError(f"Required file {x10_rec_lid_filename} not found")
+        if not file_exists(input_directory, 'rec_lid.x10'):
+            raise FileNotFoundError(f"Required file rec_lid.x10 not found")
         
-        x10_lid_verlauf_filename = os.path.join(input_directory, 'lid_verlauf.x10')
-        if not os.path.exists(x10_lid_verlauf_filename) or not os.path.isfile(x10_lid_verlauf_filename):
-            raise FileNotFoundError(f"Required file {x10_lid_verlauf_filename} not found")
+        if not file_exists(input_directory, 'lid_verlauf.x10'):
+            raise FileNotFoundError(f"Required file lid_verlauf.x10 not found")
         
-        x10_sel_fzt_feld_filename = os.path.join(input_directory, 'sel_fzt_feld.x10')
-        if not os.path.exists(x10_sel_fzt_feld_filename) or not os.path.isfile(x10_sel_fzt_feld_filename):
-            raise FileNotFoundError(f"Required file {x10_sel_fzt_feld_filename} not found")
+        if not file_exists(input_directory, 'sel_fzt_feld.x10'):
+            raise FileNotFoundError(f"Required file sel_fzt_feld.x10 not found")
         
-        x10_rec_frt_filename = os.path.join(input_directory, 'rec_frt.x10')
-        if not os.path.exists(x10_rec_frt_filename) or not os.path.isfile(x10_rec_frt_filename):
-            raise FileNotFoundError(f"Required file {x10_rec_frt_filename} not found")
+        if not file_exists(input_directory, 'rec_frt.x10'):
+            raise FileNotFoundError(f"Required file rec_frt.x10 not found")
     
         return True
 
