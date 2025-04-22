@@ -235,7 +235,8 @@ class DefaultAdapter(BaseAdapter):
             x10_rec_frt_hzt.close()
 
             # load and generate trips
-            logging.info('Generating trips ...')
+            operation_day = int(datetime.now().strftime('%Y%m%d'))
+            logging.info(f"Generating trips for operation day {operation_day} ...")
 
             trip_index = dict()
 
@@ -270,6 +271,7 @@ class DefaultAdapter(BaseAdapter):
                             line=line_index[line_id],
                             direction=direction,
                             international_id=international_id,
+                            operation_day=operation_day,
                             connection=transaction
                         )
 
