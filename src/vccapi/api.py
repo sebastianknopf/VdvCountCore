@@ -49,7 +49,7 @@ async def departures_by_parent_stop_id(parent_stop_id):
                 'sequence': d.sequence
             }
 
-        result.append(obj)
+            result.append(obj)
 
     return result
 
