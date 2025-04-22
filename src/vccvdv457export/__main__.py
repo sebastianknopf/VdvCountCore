@@ -1,6 +1,5 @@
 import click
 import os
-import schedule
 import time
 
 from croniter import croniter
@@ -27,12 +26,9 @@ def main():
     # run main method first time
     _run_now()
 
-    # run main method
-    schedule.every(1).minutes.do(run)
-
     while True:
-        schedule.run_pending()
-        time.sleep(1)
+        run()
+        time.sleep(50)
 
 if __name__ == '__main__':
     cli()
