@@ -83,11 +83,11 @@ async def trips_by_id(trip_id):
 
 @app.get('/masterdata/vehicles')
 async def masterdata_vehicles():
-    return [sqlobject2dict(o) for o in MasterDataVehicle.select()]
+    return [sqlobject2dict(o) for o in MasterDataVehicle.select().orderBy(MasterDataVehicle.q.name)]
 
 @app.get('/masterdata/objectclasses')
 async def masterdata_objectclasses():
-    return [sqlobject2dict(o) for o in MasterDataObjectClass.select()]
+    return [sqlobject2dict(o) for o in MasterDataObjectClass.select().orderBy(MasterDataObjectClass.q.name)]
 
 @app.post('/results/post/{guid}')
 async def results_post(guid, request: Request):
