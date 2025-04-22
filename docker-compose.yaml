@@ -91,6 +91,7 @@ services:
       - VCC_API_PORT
     volumes:
       - ${VCC_API_DATA_DIRECTORY}:/data
+      - ${VCC_API_LOG_DIRECTORY}:/logs
     depends_on:
       "vcc-database":
         condition: service_healthy
