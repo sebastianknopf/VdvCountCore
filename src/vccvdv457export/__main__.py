@@ -1,10 +1,17 @@
 import click
 import os
-import schedule
 import time
 
+from croniter import croniter
+from datetime import datetime
+
 def run():
-    print('Main VDV457 Export', flush=True)
+
+    now = datetime.now()
+    cron = os.getenv('VCC_VDV457_EXPORT_INTERVAL', '0 */1 * * *')
+
+    if croniter.match(cron, now):
+        print('Main VDV457 Export', flush=True)    
 
 @click.group()
 def cli():
@@ -13,16 +20,9 @@ def cli():
 @cli.command()
 def main():
 
-    # run main method first time
-    run()
-
-    # run main method as configured interval
-    interval = int(os.getenv('VCC_VDV457_EXPORT_INTERVAL', 1440))
-    schedule.every(interval).minutes.do(run)
-
     while True:
-        schedule.run_pending()
-        time.sleep(1)
+        run()
+        time.sleep(60)
 
 if __name__ == '__main__':
     cli()
