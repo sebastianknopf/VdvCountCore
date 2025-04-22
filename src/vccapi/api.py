@@ -114,7 +114,7 @@ async def logs_post(device_guid, request: Request):
         if not request.headers.get('Content-Type', '').startswith('text/plain'):
             return Response(status_code=400)
 
-        with open(f"/logs/{timestamp}-{device_guid}.json", 'w+') as file:
+        with open(f"/logs/{timestamp}-{device_guid}.log", 'w+') as file:
             file.write(text)
 
     except UnicodeDecodeError:
