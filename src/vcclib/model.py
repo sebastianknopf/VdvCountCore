@@ -71,6 +71,7 @@ class Trip(SQLObject):
     direction = IntCol()
     headsign = StringCol(default=None)
     international_id = StringCol(default=None)
+    operation_day = IntCol()
     next_trip_id = IntCol(default=None)
 
     def stop_times(self):

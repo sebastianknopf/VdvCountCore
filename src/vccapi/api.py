@@ -10,9 +10,7 @@ from qrcode import QRCode, constants
 
 from vcclib import database
 from vcclib.model import Stop
-from vcclib.model import Line
 from vcclib.model import Trip
-from vcclib.model import StopTime
 from vcclib.model import MasterDataVehicle
 from vcclib.model import MasterDataObjectClass
 
@@ -45,6 +43,7 @@ async def departures_by_parent_stop_id(parent_stop_id):
                 'direction': d.trip.direction,
                 'headsign': d.trip.headsign,
                 'international_id': d.trip.international_id,
+                'operation_day': d.trip.operation_day,
                 'arrival_timestamp': d.arrival_timestamp,
                 'departure_timestamp': d.departure_timestamp,
                 'sequence': d.sequence
@@ -75,6 +74,7 @@ async def trips_by_id(trip_id):
         'direction': trip.direction,
         'headsign': trip.headsign,
         'international_id': trip.international_id,
+        'operation_day': trip.operation_day,
         'next_trip_id': trip.next_trip_id,
         'stop_times': stop_times_result
     }
