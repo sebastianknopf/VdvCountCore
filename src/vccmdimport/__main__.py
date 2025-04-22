@@ -1,7 +1,6 @@
 import click
 import logging
 import os
-import schedule
 import time
 
 from croniter import croniter
