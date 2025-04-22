@@ -33,19 +33,22 @@ async def stops_by_name(lookup_name):
 async def departures_by_parent_stop_id(parent_stop_id):
     parent_stop_id = int(parent_stop_id)
 
+    reference_timestamp = datetime.now().timestamp() - 3600
+
     result = list()
     for d in Stop.departures(parent_stop_id):
-        obj = {
-            'stop_id': d.stop.stop_id,
-            'line': sqlobject2dict(d.trip.line),
-            'trip_id': d.trip.trip_id,
-            'direction': d.trip.direction,
-            'headsign': d.trip.headsign,
-            'international_id': d.trip.international_id,
-            'arrival_timestamp': d.arrival_timestamp,
-            'departure_timestamp': d.departure_timestamp,
-            'sequence': d.sequence
-        }
+        if d.departure_timestamp >= reference_timestamp:
+            obj = {
+                'stop_id': d.stop.stop_id,
+                'line': sqlobject2dict(d.trip.line),
+                'trip_id': d.trip.trip_id,
+                'direction': d.trip.direction,
+                'headsign': d.trip.headsign,
+                'international_id': d.trip.international_id,
+                'arrival_timestamp': d.arrival_timestamp,
+                'departure_timestamp': d.departure_timestamp,
+                'sequence': d.sequence
+            }
 
         result.append(obj)
 
