@@ -1,7 +1,6 @@
 import click
 import logging
 import os
-import schedule
 import time
 
 from croniter import croniter
@@ -15,7 +14,7 @@ from vccvdv452import.adapter.vvs import VvsAdapter
 def run():
     
     now = datetime.now().replace(second=0, microsecond=0)
-    cron = os.getenv('VCC_VDV452_IMPORT_INTERVAL', '0 */1 * * *')
+    cron = os.getenv('VCC_VDV452_IMPORT_INTERVAL', '0 3 * * *')
 
     if croniter.match(cron, now):
         _run_now()
@@ -52,15 +51,12 @@ def main():
     # open DB connection
     database.init()
 
-    # run main method first time
+    # run import first time at startup
     _run_now()
 
-    # run main method
-    schedule.every(1).minutes.do(run)
-
     while True:
-        schedule.run_pending()
-        time.sleep(1)
+        run()
+        time.sleep(55)
 
 if __name__ == '__main__':
     cli()

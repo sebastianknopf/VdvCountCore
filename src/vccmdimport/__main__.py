@@ -37,7 +37,7 @@ def _run_now():
         if os.getenv('VCC_DEBUG', '0') == '1':
             logging.exception(ex)
         else:
-            logging.error(str(ex))
+            logging.error(str(ex)) 
 
 @click.group()
 def cli():
@@ -51,16 +51,13 @@ def main():
 
     # open DB connection
     database.init()
-    
-    # run main method first time
+
+    # run import first time at startup
     _run_now()
 
-    # run main method
-    schedule.every(1).minutes.do(run)
-
     while True:
-        schedule.run_pending()
-        time.sleep(1)
+        run()
+        time.sleep(55)
 
 if __name__ == '__main__':
     cli()
