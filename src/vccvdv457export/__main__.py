@@ -8,7 +8,7 @@ from datetime import datetime
 def run():
 
     now = datetime.now()
-    cron = os.getenv('VCC_MD_IMPORT_INTERVAL', '0 */1 * * *')
+    cron = os.getenv('VCC_VDV457_EXPORT_INTERVAL', '0 */1 * * *')
 
     print(cron, flush=True)
     if croniter.match(cron, now):

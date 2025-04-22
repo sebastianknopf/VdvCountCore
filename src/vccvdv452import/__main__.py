@@ -15,7 +15,7 @@ from vccvdv452import.adapter.vvs import VvsAdapter
 def run():
     
     now = datetime.now().replace(second=0, microsecond=0)
-    cron = os.getenv('VCC_MD_IMPORT_INTERVAL', '0 */1 * * *')
+    cron = os.getenv('VCC_VDV452_IMPORT_INTERVAL', '0 */1 * * *')
 
     if croniter.match(cron, now):
         _run_now()
