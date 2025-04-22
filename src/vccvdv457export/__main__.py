@@ -10,6 +10,7 @@ def run():
     now = datetime.now()
     cron = os.getenv('VCC_MD_IMPORT_INTERVAL', '0 */1 * * *')
 
+    print(cron)
     if croniter.match(cron, now):
         _run_now()
 
