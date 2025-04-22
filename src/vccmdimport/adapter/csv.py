@@ -6,6 +6,7 @@ from vcclib import database
 from vcclib.model import MasterDataVehicle
 from vcclib.model import MasterDataObjectClass
 from vcclib.filesystem import directory_contains_files
+from vcclib.filesystem import file_exists
 from vccmdimport.adapter.base import BaseAdapter
 
 class CsvAdapter(BaseAdapter):
@@ -94,13 +95,11 @@ class CsvAdapter(BaseAdapter):
             logging.info(f"Input directory {input_directory} is empty!")
             return False
 
-        csv_vehicles_filename = os.path.join(input_directory, 'vehicles.csv')
-        if not os.path.exists(csv_vehicles_filename) or not os.path.isfile(csv_vehicles_filename):
-            raise FileNotFoundError(f"Required file {csv_vehicles_filename} not found")
+        if not file_exists(input_directory, 'vehicles.csv'):
+            raise FileNotFoundError(f"Required file vehicles.csv not found")
         
-        csv_object_classes_filename = os.path.join(input_directory, 'object_classes.csv')
-        if not os.path.exists(csv_object_classes_filename) or not os.path.isfile(csv_object_classes_filename):
-            raise FileNotFoundError(f"Required file {csv_object_classes_filename} not found")
+        if not file_exists(input_directory, 'object_classes.csv'):
+            raise FileNotFoundError(f"Required file object_classes.csv not found")
 
         return True
 
