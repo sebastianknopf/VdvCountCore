@@ -12,7 +12,6 @@ version="0.0.1"
 dependencies = [
     "click",
     "croniter",
-    "schedule",
     "pytz",
     "pyyaml"
 ]
