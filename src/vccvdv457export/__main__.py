@@ -21,38 +21,40 @@ def run():
 
 def _run_now():
 
-    vdv457_2_convert = os.getenv('VCC_VDV457_2_CONVERT', 'false').lower()
-    if vdv457_2_convert == 'true':   
+    # instantiate and run VDV457-2 conversion
+    vdv457_convert_2 = os.getenv('VCC_VDV457_EXPORT_CONVERT_2', 'false').lower()
+    if vdv457_convert_2 == 'true':   
 
         adapter: BaseAdapter = None
 
-        adapter_type = os.getenv('VCC_VDV457_2_ADAPTER_TYPE', 'default')
+        adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_2', 'default')
         if adapter_type == 'default':
             adapter = s2.DefaultAdapter()
         else:
             raise ValueError(f"Unknown VDV457-2 adapter type {adapter_type}!")
         
         try:
-            adapter.process('/data/input', '/data/output/vdv4572')
+            adapter.process('/data/input', '/data/vdv4572')
         except Exception as ex:
             if os.getenv('VCC_DEBUG', '0') == '1':
                 logging.exception(ex)
             else:
                 logging.error(str(ex))
 
-    vdv457_3_convert = os.getenv('VCC_VDV457_3_CONVERT', 'false').lower()
-    if vdv457_3_convert == 'true':
+    # instantiate and run VDV457-3 conversion
+    vdv457_convert_3 = os.getenv('VCC_VDV457_EXPORT_CONVERT_3', 'false').lower()
+    if vdv457_convert_3 == 'true':
 
         adapter: BaseAdapter = None
 
-        adapter_type = os.getenv('VCC_VDV457_3_ADAPTER_TYPE', 'default')
+        adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_3', 'default')
         if adapter_type == 'default':
             adapter = s3.DefaultAdapter()
         else:
             raise ValueError(f"Unknown VDV457-3 adapter type {adapter_type}!")
-        
+
         try:
-            adapter.process('/data', '/data/output/vdv4572')
+            adapter.process('/data/input', '/data/vdv4573')
         except Exception as ex:
             if os.getenv('VCC_DEBUG', '0') == '1':
                 logging.exception(ex)
