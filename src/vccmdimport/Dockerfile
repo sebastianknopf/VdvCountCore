@@ -5,7 +5,7 @@ RUN apt update -y && apt install -y python3-dev default-libmysqlclient-dev pkg-c
 WORKDIR /app
 
 COPY . .
-RUN pip install --no-cache-dir .[vdvmdimport]
+RUN pip install --no-cache-dir .[mdimport]
 
 ENTRYPOINT ["python"]
 CMD ["-m", "vccmdimport", "main"]

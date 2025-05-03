@@ -12,7 +12,6 @@ version="0.0.1"
 dependencies = [
     "click",
     "croniter",
-    "lxml",
     "pytz",
     "pyyaml"
 ]
@@ -24,9 +23,13 @@ vdv452import = [
     "mysqlclient"
 ]
 
-vdvmdimport = [
+mdimport = [
     "sqlobject",
     "mysqlclient"
+]
+
+vdv457export = [
+    "lxml"
 ]
 
 api = [
@@ -38,5 +41,5 @@ api = [
 ]
 
 all = [
-    "vcc[vdv452import,api]"
+    "vcc[vdv452import,mdimport,api,vdv457export]"
 ]
