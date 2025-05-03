@@ -17,7 +17,7 @@ from vccvdv457export.adapter.base import BaseAdapter
 def run():
     
     now = datetime.now().replace(second=0, microsecond=0)
-    cron = os.getenv('VCC_VDV452_IMPORT_INTERVAL', '0 3 * * *')
+    cron = os.getenv('VCC_VDV457_EXPORT_INTERVAL', '0 3 * * *')
 
     if croniter.match(cron, now):
         _run_now()
