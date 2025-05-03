@@ -106,8 +106,14 @@ services:
     environment:
       - VCC_DEBUG
       - VCC_VDV457_EXPORT_INTERVAL
+      - VCC_VDV457_EXPORT_CONVERT_2
+      - VCC_VDV457_EXPORT_ADAPTER_TYPE_2
+      - VCC_VDV457_EXPORT_CONVERT_3
+      - VCC_VDV457_EXPORT_ADAPTER_TYPE_3
     volumes:
-      - ${VCC_VDV457_EXPORT_DATA_DIRECORY}:/data
+      - ${VCC_VDV457_EXPORT_DATA_DIRECORY}:/data/input
+      - ${VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2}:/data/vdv4572
+      - ${VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_3}:/data/vdv4573
     depends_on:
       "vcc-database":
         condition: service_healthy
