@@ -7,4 +7,4 @@ class DefaultAdapter(BaseAdapter):
         pass
 
     def process(self, input_directory: str, output_directory: str) -> None:
-        pass
+        super().process(input_directory, output_directory)
