@@ -1,3 +1,4 @@
+from vcclib.duckdb import DuckDB
 
 from vccvdv457export.adapter.base import BaseAdapter
 
@@ -6,5 +7,5 @@ class DefaultAdapter(BaseAdapter):
     def __init__(self) -> None:
         pass
 
-    def process(self, input_directory: str, output_directory: str) -> None:
-        super().process(input_directory, output_directory)
+    def process(self, ddb: DuckDB, output_directory: str) -> None:
+        super().process(ddb, output_directory)

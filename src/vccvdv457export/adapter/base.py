@@ -9,8 +9,5 @@ class BaseAdapter(ABC):
         self._ddb = DuckDB()
 
     @abstractmethod
-    def process(self, input_directory: str, output_directory: str) -> None:
-        self.load_ddb(input_directory)
-
-    def load_ddb(self, input_directory: str) -> None:
+    def process(self, ddb: DuckDB, output_directory: str) -> None:
         pass

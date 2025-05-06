@@ -62,7 +62,7 @@ def _run_now():
             raise ValueError(f"Unknown VDV457-2 adapter type {adapter_type}!")
         
         try:
-            adapter.process(stage_directory, '/data/vdv4572')
+            adapter.process(ddb, '/data/vdv4572')
         except Exception as ex:
             any_converter_failed = True
             if os.getenv('VCC_DEBUG', '0') == '1':
@@ -83,7 +83,7 @@ def _run_now():
             raise ValueError(f"Unknown VDV457-3 adapter type {adapter_type}!")
 
         try:
-            adapter.process(stage_directory, '/data/vdv4573')
+            adapter.process(ddb, '/data/vdv4573')
         except Exception as ex:
             any_converter_failed = True
             if os.getenv('VCC_DEBUG', '0') == '1':
