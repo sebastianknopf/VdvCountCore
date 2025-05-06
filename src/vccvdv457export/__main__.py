@@ -9,6 +9,7 @@ import vccvdv457export.adapter.s3.default as s3
 from croniter import croniter
 from datetime import datetime
 
+from vcclib.duckdb import DuckDB
 from vcclib.filesystem import directory_contains_files
 from vcclib.filesystem import stage_directory_files
 from vcclib.filesystem import archive_directory_files
@@ -28,6 +29,8 @@ def _run_now():
     input_directory = '/data/input'
     stage_directory = '/data/stage'
 
+    schema_filename = '/app/resources/schema.json'
+
     # check if input directory contains files at all...
     if not directory_contains_files(input_directory):
         logging.info(f"Input directory {input_directory} is empty")
@@ -37,6 +40,9 @@ def _run_now():
         # remember: the converter may run several minutes!
         logging.info(f"Staging files in input directory {input_directory} to stage directory {stage_directory}  ...")
         stage_directory_files(input_directory, stage_directory)
+
+    # initialize DuckDB instance
+    ddb = DuckDB(stage_directory, schema_filename)
 
     # check whether all converters were running fine...
     # set to true at first, in case there's no converter enabled at all to avoid unneccessary 
@@ -84,6 +90,9 @@ def _run_now():
                 logging.exception(ex)
             else:
                 logging.error(str(ex))  
+
+    # close DuckDB instance with data loaded
+    ddb.close()
 
     # if all converters ran without error, archive input files; otherwise put them in an error folder
     # archive shall be created in input directory, so pass this as destination variable
