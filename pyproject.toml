@@ -29,6 +29,7 @@ mdimport = [
 ]
 
 vdv457export = [
+    "duckdb",
     "lxml"
 ]
 
