@@ -29,7 +29,7 @@ def _run_now():
     input_directory = '/data/input'
     stage_directory = '/data/stage'
 
-    schema_filename = '/app/resources/schema.json'
+    schema_filename = '/etc/json/schema.json'
 
     # check if input directory contains files at all...
     if not directory_contains_files(input_directory):
@@ -41,58 +41,66 @@ def _run_now():
         logging.info(f"Staging files in input directory {input_directory} to stage directory {stage_directory}  ...")
         stage_directory_files(input_directory, stage_directory)
 
-    # initialize DuckDB instance
-    ddb = DuckDB(stage_directory, schema_filename)
+    try:
+        # initialize DuckDB instance
+        ddb = DuckDB(stage_directory, schema_filename)
 
-    # check whether all converters were running fine...
-    # set to true at first, in case there's no converter enabled at all to avoid unneccessary 
-    # archive folders
-    any_converter_failed = False
+        # check whether all converters were running fine...
+        # set to true at first, in case there's no converter enabled at all to avoid unneccessary 
+        # archive folders
+        any_converter_failed = False
 
-    # instantiate and run VDV457-2 conversion
-    vdv457_convert_2 = os.getenv('VCC_VDV457_EXPORT_CONVERT_2', 'false').lower()
-    if vdv457_convert_2 == 'true':   
+        # instantiate and run VDV457-2 conversion
+        vdv457_convert_2 = os.getenv('VCC_VDV457_EXPORT_CONVERT_2', 'false').lower()
+        if vdv457_convert_2 == 'true':   
 
-        adapter: BaseAdapter = None
+            adapter: BaseAdapter = None
 
-        adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_2', 'default')
-        if adapter_type == 'default':
-            adapter = s2.DefaultAdapter()
-        else:
-            raise ValueError(f"Unknown VDV457-2 adapter type {adapter_type}!")
-        
-        try:
-            adapter.process(ddb, '/data/vdv4572')
-        except Exception as ex:
-            any_converter_failed = True
-            if os.getenv('VCC_DEBUG', '0') == '1':
-                logging.exception(ex)
+            adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_2', 'default')
+            if adapter_type == 'default':
+                adapter = s2.DefaultAdapter()
             else:
-                logging.error(str(ex))
+                raise ValueError(f"Unknown VDV457-2 adapter type {adapter_type}!")
+            
+            try:
+                adapter.process(ddb, '/data/vdv4572')
+            except Exception as ex:
+                any_converter_failed = True
+                if os.getenv('VCC_DEBUG', '0') == '1':
+                    logging.exception(ex)
+                else:
+                    logging.error(str(ex))
 
-    # instantiate and run VDV457-3 conversion
-    vdv457_convert_3 = os.getenv('VCC_VDV457_EXPORT_CONVERT_3', 'false').lower()
-    if vdv457_convert_3 == 'true':
+        # instantiate and run VDV457-3 conversion
+        vdv457_convert_3 = os.getenv('VCC_VDV457_EXPORT_CONVERT_3', 'false').lower()
+        if vdv457_convert_3 == 'true':
 
-        adapter: BaseAdapter = None
+            adapter: BaseAdapter = None
 
-        adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_3', 'default')
-        if adapter_type == 'default':
-            adapter = s3.DefaultAdapter()
-        else:
-            raise ValueError(f"Unknown VDV457-3 adapter type {adapter_type}!")
-
-        try:
-            adapter.process(ddb, '/data/vdv4573')
-        except Exception as ex:
-            any_converter_failed = True
-            if os.getenv('VCC_DEBUG', '0') == '1':
-                logging.exception(ex)
+            adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_3', 'default')
+            if adapter_type == 'default':
+                adapter = s3.DefaultAdapter()
             else:
-                logging.error(str(ex))  
+                raise ValueError(f"Unknown VDV457-3 adapter type {adapter_type}!")
 
-    # close DuckDB instance with data loaded
-    ddb.close()
+            try:
+                adapter.process(ddb, '/data/vdv4573')
+            except Exception as ex:
+                any_converter_failed = True
+                if os.getenv('VCC_DEBUG', '0') == '1':
+                    logging.exception(ex)
+                else:
+                    logging.error(str(ex))  
+
+        # close DuckDB instance with data loaded
+        ddb.close()
+
+    except Exception as ex:
+        any_converter_failed = True
+        if os.getenv('VCC_DEBUG', '0') == '1':
+            logging.exception(ex)
+        else:
+            logging.error(str(ex))
 
     # if all converters ran without error, archive input files; otherwise put them in an error folder
     # archive shall be created in input directory, so pass this as destination variable
