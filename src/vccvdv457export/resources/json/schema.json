@@ -1,0 +1,253 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+      "counted_stop_times": {
+        "type": "array",
+        "items": [
+          {
+            "type": "object",
+            "properties": {
+              "passenger_counting_events": {
+                "type": "array",
+                "items": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "after_stop_sequence": {
+                        "type": "integer"
+                      },
+                      "counting_sequences": {
+                        "type": "array",
+                        "items": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "count_begin_timestamp": {
+                                "type": "integer"
+                              },
+                              "count_end_timestamp": {
+                                "type": "integer"
+                              },
+                              "counting_area_id": {
+                                "type": "string"
+                              },
+                              "door_id": {
+                                "type": "string"
+                              },
+                              "in": {
+                                "type": "integer"
+                              },
+                              "object_class": {
+                                "type": "string"
+                              },
+                              "out": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "count_begin_timestamp",
+                              "count_end_timestamp",
+                              "counting_area_id",
+                              "door_id",
+                              "in",
+                              "object_class",
+                              "out"
+                            ]
+                          }
+                        ]
+                      },
+                      "latitude": {
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "after_stop_sequence",
+                      "counting_sequences",
+                      "latitude",
+                      "longitude"
+                    ]
+                  }
+                ]
+              },
+              "arrival_timestamp": {
+                "type": "integer"
+              },
+              "departure_timestamp": {
+                "type": "integer"
+              },
+              "sequence": {
+                "type": "integer"
+              },
+              "stop": {
+                "type": "object",
+                "properties": {
+                  "international_id": {
+                    "type": "string"
+                  },
+                  "latitude": {
+                    "type": "number"
+                  },
+                  "longitude": {
+                    "type": "number"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "parent_id": {
+                    "type": "integer"
+                  },
+                  "stop_id": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "latitude",
+                  "longitude",
+                  "name",
+                  "parent_id",
+                  "stop_id"
+                ]
+              }
+            },
+            "required": [
+              "passenger_counting_events",
+              "arrival_timestamp",
+              "departure_timestamp",
+              "sequence",
+              "stop"
+            ]
+          }
+        ]
+      },
+      "device_id": {
+        "type": "string"
+      },
+      "unmatched_passenger_counting_events": {
+        "type": "array",
+        "items": [
+          {
+            "type": "object",
+            "properties": {
+              "after_stop_sequence": {
+                "type": "integer"
+              },
+              "counting_sequences": {
+                "type": "array",
+                "items": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "count_begin_timestamp": {
+                        "type": "integer"
+                      },
+                      "count_end_timestamp": {
+                        "type": "integer"
+                      },
+                      "counting_area_id": {
+                        "type": "string"
+                      },
+                      "door_id": {
+                        "type": "string"
+                      },
+                      "in": {
+                        "type": "integer"
+                      },
+                      "object_class": {
+                        "type": "string"
+                      },
+                      "out": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "count_begin_timestamp",
+                      "count_end_timestamp",
+                      "counting_area_id",
+                      "door_id",
+                      "in",
+                      "object_class",
+                      "out"
+                    ]
+                  }
+                ]
+              },
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "after_stop_sequence",
+              "counting_sequences",
+              "latitude",
+              "longitude"
+            ]
+          }
+        ]
+      },
+      "vca_version": {
+        "type": "string"
+      },
+      "vehicle_id": {
+        "type": "string"
+      },
+      "direction": {
+        "type": "integer"
+      },
+      "headsign": {
+        "type": "string"
+      },
+      "international_id": {
+        "type": "string"
+      },
+      "line": {
+        "type": "object",
+        "properties": {
+          "international_id": {
+            "type": "string"
+          },
+          "line_id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "line_id",
+          "name"
+        ]
+      },
+      "next_trip_id": {
+        "type": "integer"
+      },
+      "operation_day": {
+        "type": "integer"
+      },
+      "stop_times": {
+        "type": "null"
+      },
+      "trip_id": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "counted_stop_times",
+      "device_id",
+      "unmatched_passenger_counting_events",
+      "vca_version",
+      "vehicle_id",
+      "direction",
+      "headsign",
+      "line",
+      "next_trip_id",
+      "operation_day",
+      "trip_id"
+    ]
+  }
