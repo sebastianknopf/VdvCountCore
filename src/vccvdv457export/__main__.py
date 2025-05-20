@@ -45,8 +45,6 @@ def _run_now():
         # initialize DuckDB instance
         ddb = DuckDB(stage_directory, schema_filename)
 
-        ddb.get_primary_data_indicators()
-
         # check whether all converters were running fine...
         # set to true at first, in case there's no converter enabled at all to avoid unneccessary 
         # archive folders
