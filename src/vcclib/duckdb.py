@@ -27,10 +27,7 @@ class DuckDB:
                 self._ddb.execute(f"INSERT INTO {table_name} SELECT * FROM read_json_auto('{os.path.join(data_directory, filename)}')")
 
     def get_primary_data_indicators(self) -> Dict[tuple, str]:
-
         stmt = self._load_sql_statement('select_primary_data_indicators')
-
-        logging.info(stmt)
     
     def _load_sql_statement(self, sql_filename: str, **arguments: Any) -> str:
 
@@ -40,6 +37,10 @@ class DuckDB:
 
         for key, value in arguments.items():
             sql_statement = sql_statement.replace(f"%%{key}%%", value)
+
+        # log generated SQL statement in debugging mode
+        if os.getenv('VCC_DEBUG', 'false').lower() == 'true' or os.getenv('VCC_DEBUG', 'false') == '1':
+            logging.info(sql_statement)
 
         return sql_statement
     
