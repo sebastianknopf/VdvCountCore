@@ -30,7 +30,9 @@ mdimport = [
 
 vdv457export = [
     "duckdb",
-    "lxml"
+    "lxml",
+    "polars",
+    "pyarrow"
 ]
 
 api = [
