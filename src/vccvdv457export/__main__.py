@@ -29,7 +29,7 @@ def _run_now():
     input_directory = '/data/input'
     stage_directory = '/data/stage'
 
-    schema_filename = '/etc/json/schema.json'
+    schema_filename = '/etc/resources/json/schema.json'
 
     # check if input directory contains files at all...
     if not directory_contains_files(input_directory):
@@ -44,6 +44,8 @@ def _run_now():
     try:
         # initialize DuckDB instance
         ddb = DuckDB(stage_directory, schema_filename)
+
+        ddb.get_primary_data_indicators()
 
         # check whether all converters were running fine...
         # set to true at first, in case there's no converter enabled at all to avoid unneccessary 

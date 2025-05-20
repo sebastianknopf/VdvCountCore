@@ -111,7 +111,7 @@ services:
       - VCC_VDV457_EXPORT_CONVERT_3
       - VCC_VDV457_EXPORT_ADAPTER_TYPE_3
     volumes:
-      - ./src/vccvdv457export/resources/json/schema.json:/etc/json/schema.json
+      - ./src/vccvdv457export/resources:/etc/resources
       - ${VCC_VDV457_EXPORT_DATA_DIRECORY}:/data/input
       - ${VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2}:/data/vdv4572
       - ${VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_3}:/data/vdv4573
