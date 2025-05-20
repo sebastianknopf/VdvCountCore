@@ -4,6 +4,8 @@ import logging
 import os
 
 from datetime import datetime
+from typing import Any
+from typing import Dict
 
 class DuckDB:
 
@@ -24,6 +26,23 @@ class DuckDB:
                 logging.info(f"Loading file {filename} ...")
                 self._ddb.execute(f"INSERT INTO {table_name} SELECT * FROM read_json_auto('{os.path.join(data_directory, filename)}')")
 
+    def get_primary_data_indicators(self) -> Dict[tuple, str]:
+
+        stmt = self._load_sql_statement('select_primary_data_indicators')
+
+        logging.info(stmt)
+    
+    def _load_sql_statement(self, sql_filename: str, **arguments: Any) -> str:
+
+        sql_filename = os.path.join('/etc/resources/sql', f"{sql_filename}.sql")
+        with open(sql_filename, 'r', encoding='utf-8') as sql_file:
+            sql_statement = sql_file.read()
+
+        for key, value in arguments.items():
+            sql_statement = sql_statement.replace(f"%%{key}%%", value)
+
+        return sql_statement
+    
     def _json_schema_to_create_statement(self, table_name: str, json_schema: dict) -> str:
         properties = json_schema.get("properties", {})
         required_fields = json_schema.get("required", [])
