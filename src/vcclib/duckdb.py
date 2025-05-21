@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import Any
 from typing import Dict
 
+from .common import is_debug
+
 class DuckDB:
 
     def __init__(self, data_directory: str, schema_filename: str):
@@ -26,9 +28,13 @@ class DuckDB:
                 logging.info(f"Loading file {filename} ...")
                 self._ddb.execute(f"INSERT INTO {table_name} SELECT * FROM read_json_auto('{os.path.join(data_directory, filename)}')")
 
-    def get_primary_data_indicators(self) -> Dict[tuple, str]:
-        result = self._execute_sql_statement('select_primary_data_indicators')
-    
+    def get_primary_indicators(self) -> Dict[tuple, str]:
+        result = self._execute_sql_statement('select_primary_indicators')
+
+        # log results in debugging mode
+        if is_debug():
+            logging.info(result)
+
     def _execute_sql_statement(self, sql_filename: str, **arguments: Any) -> str:
 
         # load statement file from resources
@@ -37,7 +43,7 @@ class DuckDB:
             sql_statement = sql_file.read()
 
         # log generated SQL statement in debugging mode
-        if os.getenv('VCC_DEBUG', 'false').lower() == 'true' or os.getenv('VCC_DEBUG', 'false') == '1':
+        if is_debug():
             logging.info(sql_statement)
 
         result = self._ddb.execute(sql_statement, tuple(arguments.values())).pl()
