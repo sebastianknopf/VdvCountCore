@@ -35,6 +35,48 @@ class DuckDB:
         if is_debug():
             logging.info(result)
 
+        # transform result into dict
+        primary_indicators = {
+            (k1, k2): v
+            for k1, k2, v in zip(
+                result["operation_day"].to_list(), 
+                result["trip_id"].to_list(), 
+                result["device_id"].to_list()
+            )
+        }
+
+        return primary_indicators
+
+    def get_primary_data(self, operation_day: int, trip_id: str, device_id: str) -> List[tuple]:
+        result = self._execute_sql_statement(
+            'select_primary_data', 
+            operation_day=operation_day, 
+            trip_id=trip_id,
+            device_id=device_id
+        )
+
+        # log results in debugging mode
+        if is_debug():
+            logging.info(result)
+
+        # transform result into list
+        return result.rows()        
+
+    def get_secondary_data(self, operation_day: int, trip_id: str, primary_device_id: str) -> List[tuple]:
+        result = self._execute_sql_statement(
+            'select_primary_data', 
+            operation_day=operation_day, 
+            trip_id=trip_id,
+            device_id=primary_device_id
+        )
+
+        # log results in debugging mode
+        if is_debug():
+            logging.info(result)
+
+        # transform result into list
+        return result.rows()
+
     def _execute_sql_statement(self, sql_filename: str, **arguments: Any) -> str:
 
         # load statement file from resources
