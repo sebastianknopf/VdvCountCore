@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from typing import Any
 from typing import Dict
+from typing import List
 
 from .common import is_debug
 
@@ -64,7 +65,7 @@ class DuckDB:
 
     def get_secondary_data(self, operation_day: int, trip_id: str, primary_device_id: str) -> List[tuple]:
         result = self._execute_sql_statement(
-            'select_primary_data', 
+            'select_secondary_data', 
             operation_day=operation_day, 
             trip_id=trip_id,
             device_id=primary_device_id
