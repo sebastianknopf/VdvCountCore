@@ -16,8 +16,4 @@ class DefaultAdapter(BaseAdapter):
 
             primary_data = ddb.get_primary_data(operation_day, trip_id, device_id)
 
-            logging.info(primary_data)
-
             secondary_data = ddb.get_secondary_data(operation_day, trip_id, device_id)
-
-            logging.info(secondary_data)
