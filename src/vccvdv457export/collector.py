@@ -21,6 +21,23 @@ class PassengerCountingEventCollector:
         logging.info(f"Combining {len(passenger_counting_events)} secondary PCEs with {len(self._passenger_counting_events)} existing PCEs")
         self._combine_passenger_counting_events(passenger_counting_events)
             
+    def verify(self) -> None:
+        
+        # log all PCEs found with their basic data
+        logging.info("Found follwing PCEs ...")
+        for i, pce in enumerate(self._passenger_counting_events):
+            logging.info(f"{i + 1}. {str(pce)}")
+
+        # following checks are performed during verification
+        # 1. overlapping time
+
+        for p in range(1, len(self._passenger_counting_events)):
+            this_pce = self._passenger_counting_events[p]
+            last_pce = self._passenger_counting_events[p - 1]
+
+            if last_pce.begin_timestamp() <= this_pce.begin_timestamp() <= last_pce.end_timestamp():
+                logging.warning(f"{p + 1}. PCE overlaps {p}. PCE in timestamp and remains to different stops")
+
     def get_passenger_counting_events(self) -> List[PassengerCountingEvent]:
         return self._passenger_counting_events
     
@@ -33,7 +50,7 @@ class PassengerCountingEventCollector:
                 # generate CountingSequence and add it to existing PCE
                 cs: CountingSequence = self._extract_counting_sequence(row)
                 pce.counting_sequences.append(cs)
-            elif row['begin_timestamp'] is not None and pce is not None and pce.begin_timestamp() == row['begin_timestamp']:
+            elif row['begin_timestamp'] is not None and pce is not None and int(pce.begin_timestamp().timestamp()) == row['begin_timestamp']:
                 # generate CountingSequence and add it to existing PCE
                 cs: CountingSequence = self._extract_counting_sequence(row)
                 pce.counting_sequences.append(cs)
@@ -88,4 +105,49 @@ class PassengerCountingEventCollector:
         return stop
 
     def _combine_passenger_counting_events(self, passenger_counting_events: List[PassengerCountingEvent]) -> None:
-        pass
+        # combine secondary PCE with existing PCE
+        for secondary_pce in passenger_counting_events:
+            combined: bool = False
+            for existing_pce in self._passenger_counting_events:
+                if self._passenger_counting_events_intersecting(existing_pce, secondary_pce):
+                    existing_pce.combine(secondary_pce)
+
+                    # existing PCE found, no need to run through all other PCEs
+                    combined = True
+                    break
+
+            if not combined:
+                logging.warning(f"Failed to combine secondary PCE {str(secondary_pce)} with existing primary PCE")
+
+
+        # check whether we have intersecting PCEs at all now, then combine them too
+        combined_passenger_counting_events: List[PassengerCountingEvent] = list()
+
+        # check all other PCEs available and combine them if neccessary
+        for p in range(1, len(self._passenger_counting_events)):
+            this_pce = self._passenger_counting_events[p]
+            last_pce = self._passenger_counting_events[p - 1]
+
+            if self._passenger_counting_events_intersecting(last_pce, this_pce):
+                last_pce.combine(this_pce)
+                combined_passenger_counting_events.append(last_pce)
+            else:
+                if p == 1:
+                    combined_passenger_counting_events.append(last_pce)
+
+                combined_passenger_counting_events.append(this_pce)
+
+        # set results back to internal list
+        self._passenger_counting_events = combined_passenger_counting_events
+
+    def _passenger_counting_events_intersecting(self, pce1: PassengerCountingEvent, pce2: PassengerCountingEvent) -> bool:
+        
+        # check if stop ID and sequence are both the same
+        if pce1.stop is not None and pce2.stop is not None and pce1.stop.id == pce2.stop.id and pce1.stop.sequence == pce2.stop.sequence:
+            return True
+        
+        # check if after_stop_sequence is the same
+        if pce1.after_stop_sequence != -1 and pce1.after_stop_sequence == pce2.after_stop_sequence:
+            return True
+
+        return False
