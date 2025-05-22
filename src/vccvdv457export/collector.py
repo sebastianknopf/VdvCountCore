@@ -8,7 +8,10 @@ from vcclib.model import CountingSequence
 class PassengerCountingEventCollector:
 
     def __init__(self, primary_data: List[tuple]) -> None:
-        self._passenger_counting_events = self._extract_passenger_counting_events(primary_data)
+        passenger_counting_events = self._extract_passenger_counting_events(primary_data)
+
+        logging.info(f"Initializing {self.__class__.__name__} with {len(passenger_counting_events)} PCEs")
+        self._passenger_counting_events = passenger_counting_events
 
     def add(self, secondary_data: List[tuple]) -> None:
         passenger_counting_events = self._extract_passenger_counting_events(secondary_data)
