@@ -23,7 +23,8 @@ class PassengerCountingEventCollector:
         return self._passenger_counting_events
     
     def _extract_passenger_counting_events(self, data: List[tuple]) -> List[PassengerCountingEvent]:
-        pass
+        
+        return list()
 
     def _combine_passenger_counting_events(self, passenger_counting_events: List[PassengerCountingEvent]) -> None:
         pass
