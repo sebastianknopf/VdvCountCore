@@ -62,7 +62,7 @@ class DuckDB:
 
         return result["device_id"].to_list()
     
-    def get_data(self, operation_day: int, trip_id: str, device_id: str) -> List[tuple]:
+    def get_data(self, operation_day: int, trip_id: str, device_id: str) -> List[dict]:
         result = self._execute_sql_statement(
             'select_data', 
             operation_day=operation_day, 
@@ -75,7 +75,7 @@ class DuckDB:
             logging.info(result)
 
         # transform result into list
-        return result.rows()
+        return result.to_dicts()
 
     def _execute_sql_statement(self, sql_filename: str, **arguments: Any) -> str:
 
