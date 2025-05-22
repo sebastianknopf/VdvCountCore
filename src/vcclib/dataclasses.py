@@ -7,7 +7,7 @@ from typing import List
 @dataclass
 class Stop:
     id: int
-    international_id: str = None
+    international_id: str|None = None
     name: str
     latitude: float = 0.0
     longitude: float = 0.0
@@ -34,7 +34,7 @@ class PassengerCountingEvent:
     latitude: float = 0.0
     longitude: float = 0.0
     after_stop_sequence: int = -1
-    stop: Stop = None
+    stop: Stop|None = None
     counting_sequences: List[CountingSequence] = field(default_factory=list)
 
     def __init__(self) -> None:
