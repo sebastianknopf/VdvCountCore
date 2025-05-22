@@ -48,27 +48,26 @@ class DuckDB:
 
         return primary_indicators
 
-    def get_primary_data(self, operation_day: int, trip_id: str, device_id: str) -> List[tuple]:
+    def get_secondary_device_ids(self, operation_day: int, trip_id: str, primary_device_id: str) -> List[str]:
         result = self._execute_sql_statement(
-            'select_primary_data', 
+            'select_secondary_device_ids', 
             operation_day=operation_day, 
             trip_id=trip_id,
-            device_id=device_id
+            device_id=primary_device_id
         )
 
         # log results in debugging mode
         if is_debug():
             logging.info(result)
 
-        # transform result into list
-        return result.rows()        
-
-    def get_secondary_data(self, operation_day: int, trip_id: str, primary_device_id: str) -> List[tuple]:
+        return result["device_id"].to_list()
+    
+    def get_data(self, operation_day: int, trip_id: str, device_id: str) -> List[tuple]:
         result = self._execute_sql_statement(
-            'select_secondary_data', 
+            'select_data', 
             operation_day=operation_day, 
             trip_id=trip_id,
-            device_id=primary_device_id
+            device_id=device_id
         )
 
         # log results in debugging mode
