@@ -31,6 +31,9 @@ class DefaultAdapter(BaseAdapter):
                 secondary_data = ddb.get_data(operation_day, trip_id, secondary_device_id)
                 collector.add(secondary_data)
 
+            # call verify method to log every possible invalid dataset
+            collector.verify()
+
             # transform collected PCEs into final structure
             passenger_counting_events = collector.get_passenger_counting_events()
 
