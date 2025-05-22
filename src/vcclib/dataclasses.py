@@ -44,9 +44,10 @@ class PassengerCountingEvent:
         min_timestamp = int(datetime.now().timestamp())
 
         for cs in self.counting_sequences:
-            cs_timestamp = int(cs.begin_timestamp.timestamp())
-            if cs_timestamp < min_timestamp:
-                min_timestamp = cs_timestamp
+            if cs.begin_timestamp is not None:
+                cs_timestamp = int(cs.begin_timestamp.timestamp())
+                if cs_timestamp < min_timestamp:
+                    min_timestamp = cs_timestamp
 
         return min_timestamp
 
@@ -54,9 +55,10 @@ class PassengerCountingEvent:
         max_timestamp = 0
 
         for cs in self.counting_sequences:
-            cs_timestamp = int(cs.end_timestamp.timestamp())
-            if cs_timestamp > max_timestamp:
-                max_timestamp = cs_timestamp
+            if cs.end_timestamp is not None:
+                cs_timestamp = int(cs.end_timestamp.timestamp())
+                if cs_timestamp > max_timestamp:
+                    max_timestamp = cs_timestamp
 
         return max_timestamp
     

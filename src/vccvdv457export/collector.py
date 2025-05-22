@@ -1,5 +1,6 @@
 import logging
 
+from datetime import datetime
 from typing import List
 
 from vcclib.dataclasses import Stop
@@ -68,8 +69,8 @@ class PassengerCountingEventCollector:
         cs.door_id = row['door_id']
         cs.counting_area_id = row['counting_area_id']
         cs.object_class = row['object_class']
-        cs.begin_timestamp = None
-        cs.end_timestamp = None
+        cs.begin_timestamp = datetime.fromtimestamp(row['begin_timestamp'])
+        cs.end_timestamp = datetime.fromtimestamp(row['end_timestamp'])
         cs.count_in = row['in']
         cs.count_out = row['out']
 
