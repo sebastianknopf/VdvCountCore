@@ -2,8 +2,8 @@ import logging
 
 from typing import List
 
-from vcclib.model import PassengerCountingEvent
-from vcclib.model import CountingSequence
+from vcclib.dataclasses import PassengerCountingEvent
+from vcclib.dataclasses import CountingSequence
 
 class PassengerCountingEventCollector:
 
