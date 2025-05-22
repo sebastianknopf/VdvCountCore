@@ -8,10 +8,10 @@ from typing import List
 class Stop:
     id: int
     international_id: str|None = None
-    name: str
+    name: str|None = None
     latitude: float = 0.0
     longitude: float = 0.0
-    sequence: int
+    sequence: int = 0
 
     def __init__(self) -> None:
         pass
