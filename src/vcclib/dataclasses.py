@@ -38,7 +38,7 @@ class PassengerCountingEvent:
     counting_sequences: List[CountingSequence] = field(default_factory=list)
 
     def __init__(self) -> None:
-        pass
+        self.counting_sequences = list()
 
     def begin_timestamp(self) -> int:
         min_timestamp = int(datetime.now().timestamp())
