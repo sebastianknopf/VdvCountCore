@@ -40,25 +40,27 @@ class PassengerCountingEvent:
     def __init__(self) -> None:
         self.counting_sequences = list()
 
-    def begin_timestamp(self) -> int:
-        min_timestamp = int(datetime.now().timestamp())
+    def combine(self, pce: 'PassengerCountingEvent') -> None:
+        for cs in pce.counting_sequences:
+            self.counting_sequences.append(cs)
+
+    def begin_timestamp(self) -> datetime:
+        min_timestamp = datetime(2500, 1, 1)
 
         for cs in self.counting_sequences:
             if cs.begin_timestamp is not None:
-                cs_timestamp = int(cs.begin_timestamp.timestamp())
-                if cs_timestamp < min_timestamp:
-                    min_timestamp = cs_timestamp
+                if cs.begin_timestamp < min_timestamp:
+                    min_timestamp = cs.begin_timestamp
 
         return min_timestamp
 
-    def end_timestamp(self) -> int:
-        max_timestamp = 0
+    def end_timestamp(self) -> datetime:
+        max_timestamp = datetime(1900, 1, 1)
 
         for cs in self.counting_sequences:
             if cs.end_timestamp is not None:
-                cs_timestamp = int(cs.end_timestamp.timestamp())
-                if cs_timestamp > max_timestamp:
-                    max_timestamp = cs_timestamp
+                if cs.end_timestamp > max_timestamp:
+                    max_timestamp = cs.end_timestamp
 
         return max_timestamp
     
@@ -75,3 +77,9 @@ class PassengerCountingEvent:
             sum = sum + cs.count_out
 
         return sum
+    
+    def __repr__(self):
+        if self.stop is not None:
+            return f"StopID={self.stop.id}, StopSequence={self.stop.sequence}, Begin={self.begin_timestamp().strftime('%Y-%m-%d %H:%M:%S')}, End={self.end_timestamp().strftime('%Y-%m-%d %H:%M:%S')}, Latitude={self.latitude}, Longitude={self.longitude}, In={self.count_in()}, Out={self.count_out()}"
+        else:
+            return f"AfterStopSequence={self.after_stop_sequence}, Begin={self.begin_timestamp().strftime('%Y-%m-%d %H:%M:%S')}, End={self.end_timestamp().strftime('%Y-%m-%d %H:%M:%S')}, Latitude={self.latitude}, Longitude={self.longitude}, In={self.count_in()}, Out={self.count_out()}"
