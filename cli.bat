@@ -25,7 +25,7 @@ if not exist "%envfile%" (
 set ENV_FILE=%envfile%
 
 echo.
-set /p build=Do you want to force a build first (y/N)?
+set /p build=Do you want to force a build first (y/N)? 
 echo.
  
 if /i "%build%"=="y" (
