@@ -13,6 +13,7 @@ class DefaultAdapter(BaseAdapter):
     def process(self, ddb: DuckDB, output_directory: str) -> None:
         super().process(ddb, output_directory)
 
+        logging.info("Loading primary indicators")
         for (operation_day, trip_id), primary_device_id in ddb.get_primary_indicators().items():
 
             logging.info(f"Processing trip ID {trip_id} at {operation_day}, primary device is {primary_device_id}")
