@@ -44,6 +44,18 @@ class PassengerCountingEvent:
         for cs in pce.counting_sequences:
             self.counting_sequences.append(cs)
 
+    def intersects(self, pce: 'PassengerCountingEvent') -> bool:
+        
+        # check if stop ID and sequence are both the same
+        if not (self.stop is not None and pce.stop is not None and self.stop.id == pce.stop.id and self.stop.sequence == pce.stop.sequence):
+            return False
+        
+        # check if after_stop_sequence is the same
+        if not (self.after_stop_sequence != -1 and self.after_stop_sequence == pce.after_stop_sequence):
+            return False
+        
+        return True
+
     def begin_timestamp(self) -> datetime:
         min_timestamp = datetime(2500, 1, 1)
 
