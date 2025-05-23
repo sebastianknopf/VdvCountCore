@@ -24,7 +24,7 @@ class PassengerCountingEventCollector:
     def verify(self) -> None:
         
         # log all PCEs found with their basic data
-        logging.info("Found follwing PCEs ...")
+        logging.info("Found following PCEs ...")
         for i, pce in enumerate(self._passenger_counting_events):
             logging.info(f"{i + 1}. {str(pce)}")
 
@@ -113,12 +113,17 @@ class PassengerCountingEventCollector:
                     existing_pce.combine(secondary_pce)
 
                     # existing PCE found, no need to run through all other PCEs
+                    logging.info(f"Combined secondary PCE {str(secondary_pce)} with existing primary PCE")
+
                     combined = True
                     break
 
+            # there was no PCE found which could be combined with that
+            # add it to the internal PCEs list as it is
             if not combined:
-                logging.warning(f"Failed to combine secondary PCE {str(secondary_pce)} with existing primary PCE")
+                logging.info(f"Failed to combine secondary PCE {str(secondary_pce)} with existing primary PCE")
 
+                self._passenger_counting_events.append(secondary_pce)
 
         # check whether we have intersecting PCEs at all now, then combine them too
         combined_passenger_counting_events: List[PassengerCountingEvent] = list()
