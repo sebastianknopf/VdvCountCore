@@ -7,6 +7,7 @@ from typing import Dict
 from typing import List
 from typing import Set
 
+from vcclib.common import isoformattime
 from vcclib.dataclasses import PassengerCountingEvent
 from vcclib.dataclasses import CountingSequence
 from vcclib.duckdb import DuckDB
@@ -132,7 +133,7 @@ class DefaultAdapter(BaseAdapter):
                         }
                     },
                     'time': {
-                        'Value': pce.end_timestamp().strftime('%H:%M:%S%z')
+                        'Value': isoformattime(pce.end_timestamp())
                     },
                     'date': {
                         'Value': pce.end_timestamp().strftime('%Y-%m-%d')
