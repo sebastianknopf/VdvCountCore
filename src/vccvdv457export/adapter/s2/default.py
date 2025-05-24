@@ -132,7 +132,7 @@ class DefaultAdapter(BaseAdapter):
                         }
                     },
                     'time': {
-                        'Value': pce.end_timestamp().strftime('%H:%M:%S+%z')
+                        'Value': pce.end_timestamp().strftime('%H:%M:%S%z')
                     },
                     'date': {
                         'Value': pce.end_timestamp().strftime('%Y-%m-%d')

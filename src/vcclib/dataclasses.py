@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
+from datetime import timezone
 
 from typing import List
 
@@ -68,7 +69,7 @@ class PassengerCountingEvent:
         return position_intersection and time_intersection
 
     def begin_timestamp(self) -> datetime:
-        min_timestamp = datetime(2500, 1, 1)
+        min_timestamp = datetime(2500, 1, 1, tzinfo=timezone.utc)
 
         for cs in self.counting_sequences:
             if cs.begin_timestamp is not None:
@@ -78,7 +79,7 @@ class PassengerCountingEvent:
         return min_timestamp
 
     def end_timestamp(self) -> datetime:
-        max_timestamp = datetime(1900, 1, 1)
+        max_timestamp = datetime(1900, 1, 1, tzinfo=timezone.utc)
 
         for cs in self.counting_sequences:
             if cs.end_timestamp is not None:
