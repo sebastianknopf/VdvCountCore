@@ -9,6 +9,6 @@ def isoformattime(dt: datetime) -> str:
     iso: str = dt.strftime('%H:%M:%S%z')
 
     if '+' in iso:
-        iso = iso[:-2] + ":" + iso[:-2]
+        iso = iso[:-2] + ":" + iso[-2:]
 
     return iso

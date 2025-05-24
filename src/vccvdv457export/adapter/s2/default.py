@@ -25,9 +25,12 @@ class DefaultAdapter(BaseAdapter):
         super().process(ddb, output_directory)
 
         # extract PCE from loaded data
+        logging.info("Extracting PCE data from local DDB ...")
         extracted_data: Dict[tuple, List[PassengerCountingEvent]] = self._extract(ddb)
 
         # transform each operation_day/trip_id combination into final data structure
+        logging.info(f"Transforming data of {len(extracted_data.keys())} trips ...")
+        
         transformed_data: List[str] = list()
         for (operation_day, trip_id), passenger_counting_events in extracted_data.items():
             transformed_data.append(
@@ -35,9 +38,8 @@ class DefaultAdapter(BaseAdapter):
             )
 
         # export data finally
+        logging.info(f"Exporting {len(transformed_data)} trips ...")
         self._export(transformed_data, output_directory)
-
-        logging.info(f"Exported {len(transformed_data)} trips total")
 
     def _extract(self, ddb: DuckDB) -> Dict[tuple, List[PassengerCountingEvent]]:
 
