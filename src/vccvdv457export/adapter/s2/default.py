@@ -1,9 +1,14 @@
 import logging
+import os
+import uuid
 
+from datetime import datetime
 from typing import Dict
 from typing import List
+from typing import Set
 
 from vcclib.dataclasses import PassengerCountingEvent
+from vcclib.dataclasses import CountingSequence
 from vcclib.duckdb import DuckDB
 from vcclib.xml import dict2xml
 
@@ -29,7 +34,7 @@ class DefaultAdapter(BaseAdapter):
             )
 
         # export data finally
-        self._export(transformed_data)
+        self._export(transformed_data, output_directory)
 
         logging.info(f"Exported {len(transformed_data)} trips total")
 
@@ -70,11 +75,151 @@ class DefaultAdapter(BaseAdapter):
     
     def _transform(self, operation_day: int, trip_id: int, passenger_counting_events: List[PassengerCountingEvent]) -> str:
 
-        result: dict = dict()
+        result: dict = {
+            'HeaderData': {
+                'VehicleID': 'TEST'
+            },
+            'PassengerCountingEvent': list()
+        }
 
-        # todo: implementation following here
+        for i, pce in enumerate(passenger_counting_events):
+            
+            # header for each PCE
+            pce_xml = {
+                'HeaderCountingEvent': {
+                    'QueryType': 'departure',
+                    'SequentialNumber': i + 1,
+                    'TimeStamp': {
+                        'Value': pce.end_timestamp().isoformat()
+                    },
+                    'TimeStampEventStart': {
+                        'Value': pce.begin_timestamp().isoformat()
+                    },
+                    'TimeStampEventEnd': {
+                        'Value': pce.end_timestamp().isoformat()
+                    }
+                }
+            }
 
-        return dict2xml(result)
+            # stop information
+            if pce.stop is not None:
+                pce_xml['StopInformation'] = {
+                    'StopRef': {
+                        'Value': pce.stop.id
+                    },
+                    'PassengerRelated': {
+                        'Value': 'true'
+                    }
+                }
+            else:
+                pce_xml['StopInformation'] = {
+                    'PassengerRelated': {
+                        'Value': 'true'
+                    }
+                }
+            
+            # GPS position
+            pce_xml['GNSS'] = {
+                'GNSS_Point_Structure': {
+                    'Longitude': {
+                        'Degree': {
+                            'Value': pce.longitude
+                        }
+                    },
+                    'Latitude': {
+                        'Degree': {
+                            'Value': pce.latitude
+                        }
+                    },
+                    'time': {
+                        'Value': pce.end_timestamp().strftime('%H:%M:%S+%z')
+                    },
+                    'date': {
+                        'Value': pce.end_timestamp().strftime('%Y-%m-%d')
+                    },
+                    'GNSS_Type': 'GPS',
+                    'GNSSCoordinateSystem': 'WGS84'
+                }
+            }
+
+            # resolve counting areas, door IDs and object classes
+            pce_xml['CountingArea'] = list()
+
+            counting_area_ids: Set[str] = {cs.counting_area_id for cs in pce.counting_sequences}
+            door_ids: Set[str] = {cs.door_id for cs in pce.counting_sequences}
+            object_classes: Set[str] = {cs.object_class for cs in pce.counting_sequences}
+
+            for counting_area_id in counting_area_ids:
+                counting_area_xml: dict = {
+                    'AreaID': counting_area_id,
+                    'Counting': list()
+                }
+
+                for door_id in door_ids:
+                    counting_xml: dict = {
+                        'DoorID': {
+                            'Value': door_id
+                        },
+                        'DoorState': {
+                            'OpenState': {
+                                'Value': 'AllDoorsClosed'
+                            },
+                            'OperationState': {
+                                'Value': 'Normal'
+                            }
+                        },
+                        'Count': list()
+                    }
+
+                    for object_class in object_classes:
+                        cs: CountingSequence = next((cs for cs in pce.counting_sequences if cs.counting_area_id == counting_area_id and cs.door_id == door_id and cs.object_class == object_class), None)
+                        if cs is not None:
+                            
+                            if 'CountInfo' not in counting_xml:
+                                counting_xml['CountInfo'] = {
+                                    'DoorOpenTime': {
+                                        'Value': cs.begin_timestamp.isoformat()
+                                    },
+                                    'DoorClosingTime': {
+                                        'Value': cs.end_timestamp.isoformat()
+                                    }
+                                }
+
+                            count_xml: dict = {
+                                'ObjectClass': object_class,
+                                'In': {
+                                    'Value': cs.count_in
+                                },
+                                'Out': {
+                                    'Value': cs.count_out
+                                },
+                                'CountQuality': 'Regular'
+                            }
+
+                            counting_xml['Count'].append(count_xml)
+
+                    counting_area_xml['Counting'].append(counting_xml)
+
+                pce_xml['CountingArea'].append(counting_area_xml)
+
+            # finally add the PCE to the complete message
+            result['PassengerCountingEvent'].append(pce_xml)
+
+        # return an XML result
+        attribute_mapping: dict = {
+            'HeaderCountingEvent': [
+                'QueryType'
+            ]
+        }
+
+        return dict2xml('PassengerCountingMessage', result, attribute_mapping)
     
-    def _export(self, transformed_data: List[str]) -> None:
-        pass
+    def _export(self, transformed_data: List[str], output_directory: str) -> None:   
+        
+        # write each dataset to a single file
+        for d in transformed_data:
+            output_filename: str = os.path.join(output_directory, f"{str(uuid.uuid4())}.xml")
+
+            with open(output_filename, 'wb') as output_file:
+                output_file.write(b'<?xml version="1.0" encoding="UTF-8" ?>\n')
+                output_file.write(d)
