@@ -29,8 +29,11 @@ def _build_xml_element(parent, d, attribute_mapping=None):
     else:
         parent.text = str(d)
 
-def dict2xml(tag, d, attribute_mapping=None):
+def dict2xml(tag, d, attribute_mapping=None) -> str:
     root = etree.Element(tag)
     _build_xml_element(root, d, attribute_mapping)
 
-    return root
+    etree.indent(root, space="    ")
+    xml_str: str = etree.tostring(root, pretty_print=True)
+
+    return xml_str
