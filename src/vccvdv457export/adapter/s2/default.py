@@ -76,11 +76,26 @@ class DefaultAdapter(BaseAdapter):
         # finally return generated results
         return results
     
-    def _transform(self, operation_day: int, trip_id: int, passenger_counting_events: List[PassengerCountingEvent]) -> str:
+    def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, device_id: str, passenger_counting_events: List[PassengerCountingEvent]) -> str:
 
+        # select trip details and obtain basic data
+        trip_details = ddb.get_trip_details(
+            operation_day,
+            trip_id
+        )
+
+        vehicle_id = trip_details[0]['vehicle_id']
+
+        direction = trip_details[0]['direction']
+
+        line_id = trip_details[0]['line_id']
+        line_international_id = trip_details[0]['line_international_id']
+        line_name = trip_details[0]['line_name']
+
+        # build results dataset
         result: dict = {
             'HeaderData': {
-                'VehicleID': 'TEST'
+                'VehicleID': vehicle_id
             },
             'PassengerCountingEvent': list()
         }
@@ -121,6 +136,17 @@ class DefaultAdapter(BaseAdapter):
                     }
                 }
             
+            # line information
+            pce_xml['Line'] = {
+                'LineRef': {
+                    'Value': line_id
+                },
+                'LineNumber': {
+                    'Value': line_name
+                },
+                'DirectionType': direction
+            }
+                
             # GPS position
             pce_xml['GNSS'] = {
                 'GNSS_Point_Structure': {
