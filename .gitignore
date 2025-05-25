@@ -207,5 +207,6 @@ pip-selfcheck.json
 # Project Specific
 Storage/
 dev.env
+.env.dev
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,venv
