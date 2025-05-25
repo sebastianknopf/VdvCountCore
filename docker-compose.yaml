@@ -23,15 +23,16 @@ services:
     networks:
       - vcc
     ports:
-      - "${VCC_API_PORT}:443"
-    entrypoint: ["/bin/sh", "-c", "
-      htpasswd -bc /usr/local/apache2/conf/.htpasswd ${VCC_USERNAME} ${VCC_PASSWORD} &&
-      echo 'Include /usr/local/apache2/conf/extra/httpd-vcc-proxy.conf' >> /usr/local/apache2/conf/httpd.conf && 
-      httpd-foreground"]
+      - "${VCC_API_PORT}:80"
+      - "${VCC_API_SSL_PORT}:443"
+    entrypoint: ["/bin/sh", "/usr/local/bin/entrypoint.sh"]
     environment:
       - VCC_USERNAME
       - VCC_PASSWORD
+      - VCC_PROXY_SSL_ACTIVE
     volumes:
+      - ./src/vccproxy/entrypoint.sh:/usr/local/bin/entrypoint.sh:ro
+      - ./src/vccproxy/httpd-vcc-proxy-ssl.conf:/usr/local/apache2/conf/extra/httpd-vcc-proxy-ssl.conf:ro
       - ./src/vccproxy/httpd-vcc-proxy.conf:/usr/local/apache2/conf/extra/httpd-vcc-proxy.conf:ro
       - ${VCC_PROXY_SSL_CERT_FILENAME}:/etc/ssl/certs/cert.crt
       - ${VCC_PROXY_SSL_CHAIN_FILEMAME}:/etc/ssl/certs/chain.crt
