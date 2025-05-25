@@ -77,12 +77,11 @@ class DuckDB:
         # transform result into list
         return result.to_dicts()
     
-    def get_trip_details(self, operation_day: int, trip_id: int, device_id: str) -> List[dict]:
+    def get_trip_details(self, operation_day: int, trip_id: int) -> List[dict]:
         result = self._execute_sql_statement(
             'select_trip_details',
             operation_day=operation_day,
-            trip_id=trip_id,
-            device_id=device_id
+            trip_id=trip_id
         )
 
         # log results in debugging mode

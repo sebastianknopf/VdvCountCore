@@ -5,6 +5,7 @@ WITH expanded_trip AS (
 		device_id,
 		vehicle_id,
 		counted_stop_times,
+		direction,
 		UNNEST(line)
 	FROM
 		vccdata
@@ -15,6 +16,7 @@ counted_stops AS (
     	trip_id,
     	device_id,
     	vehicle_id,
+    	direction,
     	line_id,
     	international_id AS line_international_id, 
     	name AS line_name,
@@ -33,6 +35,7 @@ SELECT
 	counted_stop.stop.longitude AS stop_longitude,
 	counted_stop.stop.name AS stop_name,
 	counted_stop.sequence AS stop_sequence,
+	direction,
 	line_id,
 	line_international_id,
 	line_name
@@ -41,4 +44,3 @@ FROM
 WHERE
 	operation_day = ?
 	AND trip_id = ?
-	AND device_id = ?
