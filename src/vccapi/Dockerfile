@@ -4,8 +4,16 @@ RUN apt update -y && apt install -y python3-dev default-libmysqlclient-dev pkg-c
 
 WORKDIR /app
 
-COPY . .
+COPY pyproject.toml /app
 RUN pip install --no-cache-dir .[api]
+
+COPY .env /app
+COPY .env.dev /app
+COPY docker-compose.yaml /app
+COPY docker-compose.dev.yaml /app
+
+COPY src/ /app/src
+RUN pip install --no-deps .[api]
 
 EXPOSE 8080
 
