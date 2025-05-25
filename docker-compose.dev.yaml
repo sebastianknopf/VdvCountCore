@@ -1,0 +1,11 @@
+services:
+  vcc-vdv457-export:
+    entrypoint: >
+      sh -c "
+        pip install debugpy && PYTHONPATH=src python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m vccvdv457export main
+      "
+    ports:
+      - "5678:5678"
+
+networks:
+  vcc:
