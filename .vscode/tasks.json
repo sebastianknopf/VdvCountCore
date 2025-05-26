@@ -4,7 +4,7 @@
         {
             "label": "vccvdv457export-dev",
             "type": "shell",
-            "command": "docker compose --env-file .env.dev -f docker-compose.yaml -f docker-compose.dev.yaml up -d --build --no-deps vcc-vdv457-export",
+            "command": "docker compose -f docker-compose.yaml -f docker-compose.dev.yaml --env-file dev.env up -d --build --no-deps vcc-vdv457-export",
             "group": "build",
             "problemMatcher": [],
             "isBackground": true
@@ -12,7 +12,7 @@
         {
             "label": "vccproxy-dev",
             "type": "shell",
-            "command": "docker compose --env-file .env.dev -f docker-compose.yaml -f docker-compose.dev.yaml up -d --build --no-deps vcc-proxy",
+            "command": "docker compose -f docker-compose.yaml -f docker-compose.dev.yaml --env-file dev.env up -d --build --force-recreate --no-deps vcc-proxy",
             "group": "build",
             "problemMatcher": [],
             "isBackground": true
