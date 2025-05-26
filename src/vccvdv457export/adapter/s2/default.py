@@ -11,6 +11,7 @@ from vcclib.common import isoformattime
 from vcclib.dataclasses import PassengerCountingEvent
 from vcclib.dataclasses import CountingSequence
 from vcclib.duckdb import DuckDB
+from vcclib.version import version
 from vcclib.xml import dict2xml
 
 from vccvdv457export.adapter.base import BaseAdapter
@@ -34,7 +35,7 @@ class DefaultAdapter(BaseAdapter):
         transformed_data: List[str] = list()
         for (operation_day, trip_id), passenger_counting_events in extracted_data.items():
             transformed_data.append(
-                self._transform(operation_day, trip_id, passenger_counting_events)
+                self._transform(ddb, operation_day, trip_id, passenger_counting_events)
             )
 
         # export data finally
@@ -76,7 +77,7 @@ class DefaultAdapter(BaseAdapter):
         # finally return generated results
         return results
     
-    def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, device_id: str, passenger_counting_events: List[PassengerCountingEvent]) -> str:
+    def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, passenger_counting_events: List[PassengerCountingEvent]) -> str:
 
         # select trip details and obtain basic data
         trip_details = ddb.get_trip_details(
@@ -95,7 +96,24 @@ class DefaultAdapter(BaseAdapter):
         # build results dataset
         result: dict = {
             'HeaderData': {
-                'VehicleID': vehicle_id
+                'VehicleID': vehicle_id,
+                'APC-Device': {
+                    'DeviceSpecification': {
+                        'DeviceClass': 'APC',
+                        'DeviceID': {
+                            'Value': 'VdvCountCore'
+                        }
+                    },
+                    'DeviceState': 'running',
+                    'SoftwareVersion': {
+                        'DataType': {
+                            'Value': 'firmware'
+                        },
+                        'VersionRef': {
+                            'Value': version
+                        }
+                    }
+                }
             },
             'PassengerCountingEvent': list()
         }
