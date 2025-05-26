@@ -1,11 +1,11 @@
 import logging
 import os
-import uuid
 
 from datetime import datetime
 from typing import Dict
 from typing import List
 from typing import Set
+from typing import Tuple
 
 from vcclib.common import isoformattime
 from vcclib.dataclasses import PassengerCountingEvent
@@ -32,11 +32,10 @@ class DefaultAdapter(BaseAdapter):
         # transform each operation_day/trip_id combination into final data structure
         logging.info(f"Transforming data of {len(extracted_data.keys())} trips ...")
         
-        transformed_data: List[str] = list()
+        transformed_data: Dict[tuple, str] = dict()
         for (operation_day, trip_id, vehicle_id), passenger_counting_events in extracted_data.items():
-            transformed_data.append(
-                self._transform(ddb, operation_day, trip_id, vehicle_id, passenger_counting_events)
-            )
+            key, value = self._transform(ddb, operation_day, trip_id, vehicle_id, passenger_counting_events)
+            transformed_data[key] = value
 
         # export data finally
         logging.info(f"Exporting {len(transformed_data)} trips ...")
@@ -77,7 +76,7 @@ class DefaultAdapter(BaseAdapter):
         # finally return generated results
         return results
     
-    def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str, passenger_counting_events: List[PassengerCountingEvent]) -> str:
+    def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str, passenger_counting_events: List[PassengerCountingEvent]) -> Tuple[tuple, str]:
 
         # select trip details and obtain basic data
         trip_details = ddb.get_trip_details(
@@ -258,14 +257,26 @@ class DefaultAdapter(BaseAdapter):
             ]
         }
 
-        return dict2xml('PassengerCountingMessage', result, attribute_mapping)
+        xml = dict2xml('PassengerCountingMessage', result, attribute_mapping)
+
+        return (operation_day, trip_id, vehicle_id), xml
     
-    def _export(self, transformed_data: List[str], output_directory: str) -> None:   
+    def _export(self, transformed_data: Dict[tuple, str], output_directory: str) -> None:   
         
         # write each dataset to a single file
-        for d in transformed_data:
-            output_filename: str = os.path.join(output_directory, f"{str(uuid.uuid4())}.xml")
+        for k, x in transformed_data.items():
+
+            formatted_date: str = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+
+            operation_day: int = k[0]
+            trip_id: int = k[1]
+            vehicle_id: str = k[2]
+
+            output_filename: str = os.path.join(
+                output_directory, 
+                f"{formatted_date}_O{operation_day}_T{trip_id}_{vehicle_id}.xml"
+            )
 
             with open(output_filename, 'wb') as output_file:
                 output_file.write(b'<?xml version="1.0" encoding="UTF-8" ?>\n')
-                output_file.write(d)
+                output_file.write(x)
