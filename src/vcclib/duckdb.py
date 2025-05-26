@@ -38,21 +38,23 @@ class DuckDB:
 
         # transform result into dict
         primary_indicators = {
-            (k1, k2): v
-            for k1, k2, v in zip(
-                result["operation_day"].to_list(), 
-                result["trip_id"].to_list(), 
-                result["device_id"].to_list()
+            (k1, k2, k3): v
+            for k1, k2, k3, v in zip(
+                result['operation_day'].to_list(), 
+                result['trip_id'].to_list(), 
+                result['vehicle_id'].to_list(),
+                result['device_id'].to_list()
             )
         }
 
         return primary_indicators
 
-    def get_secondary_device_ids(self, operation_day: int, trip_id: str, primary_device_id: str) -> List[str]:
+    def get_secondary_device_ids(self, operation_day: int, trip_id: str, vehicle_id: str, primary_device_id: str) -> List[str]:
         result = self._execute_sql_statement(
             'select_secondary_device_ids', 
             operation_day=operation_day, 
             trip_id=trip_id,
+            vehicle_id=vehicle_id,
             device_id=primary_device_id
         )
 
@@ -62,11 +64,12 @@ class DuckDB:
 
         return result["device_id"].to_list()
     
-    def get_data(self, operation_day: int, trip_id: str, device_id: str) -> List[dict]:
+    def get_data(self, operation_day: int, trip_id: str, vehicle_id:str, device_id: str) -> List[dict]:
         result = self._execute_sql_statement(
             'select_data', 
             operation_day=operation_day, 
             trip_id=trip_id,
+            vehicle_id=vehicle_id,
             device_id=device_id
         )
 
@@ -77,11 +80,12 @@ class DuckDB:
         # transform result into list
         return result.to_dicts()
     
-    def get_trip_details(self, operation_day: int, trip_id: int) -> List[dict]:
+    def get_trip_details(self, operation_day: int, trip_id: int, vehicle_id: str) -> List[dict]:
         result = self._execute_sql_statement(
             'select_trip_details',
             operation_day=operation_day,
-            trip_id=trip_id
+            trip_id=trip_id,
+            vehicle_id=vehicle_id
         )
 
         # log results in debugging mode

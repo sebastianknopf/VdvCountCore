@@ -33,9 +33,9 @@ class DefaultAdapter(BaseAdapter):
         logging.info(f"Transforming data of {len(extracted_data.keys())} trips ...")
         
         transformed_data: List[str] = list()
-        for (operation_day, trip_id), passenger_counting_events in extracted_data.items():
+        for (operation_day, trip_id, vehicle_id), passenger_counting_events in extracted_data.items():
             transformed_data.append(
-                self._transform(ddb, operation_day, trip_id, passenger_counting_events)
+                self._transform(ddb, operation_day, trip_id, vehicle_id, passenger_counting_events)
             )
 
         # export data finally
@@ -47,21 +47,21 @@ class DefaultAdapter(BaseAdapter):
         results: Dict[tuple, List[PassengerCountingEvent]] = dict()
 
         logging.info("Loading primary indicators")
-        for (operation_day, trip_id), primary_device_id in ddb.get_primary_indicators().items():
+        for (operation_day, trip_id, vehicle_id), primary_device_id in ddb.get_primary_indicators().items():
 
-            logging.info(f"Processing trip ID {trip_id} at {operation_day}, primary device is {primary_device_id}")
+            logging.info(f"Processing trip ID {trip_id} with vehicle ID {vehicle_id} at {operation_day}, primary device is {primary_device_id}")
 
             # select primary data and create collector instance
-            primary_data = ddb.get_data(operation_day, trip_id, primary_device_id)
+            primary_data = ddb.get_data(operation_day, trip_id, vehicle_id, primary_device_id)
             collector: PassengerCountingEventCollector = PassengerCountingEventCollector(primary_data)
             
             # select device IDs for secondary data
-            for secondary_device_id in ddb.get_secondary_device_ids(operation_day, trip_id, primary_device_id):
+            for secondary_device_id in ddb.get_secondary_device_ids(operation_day, trip_id, vehicle_id, primary_device_id):
 
                 logging.info(f"Adding secondary data of device {secondary_device_id}")
 
                 # select secondary data 
-                secondary_data = ddb.get_data(operation_day, trip_id, secondary_device_id)
+                secondary_data = ddb.get_data(operation_day, trip_id, vehicle_id, secondary_device_id)
                 collector.add(secondary_data)
 
             # call verify method to log every possible invalid dataset
@@ -72,20 +72,19 @@ class DefaultAdapter(BaseAdapter):
 
             logging.info(f"Found total {len(passenger_counting_events)} PCEs")
 
-            results[(operation_day, trip_id)] = passenger_counting_events
+            results[(operation_day, trip_id, vehicle_id)] = passenger_counting_events
         
         # finally return generated results
         return results
     
-    def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, passenger_counting_events: List[PassengerCountingEvent]) -> str:
+    def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str, passenger_counting_events: List[PassengerCountingEvent]) -> str:
 
         # select trip details and obtain basic data
         trip_details = ddb.get_trip_details(
             operation_day,
-            trip_id
+            trip_id,
+            vehicle_id
         )
-
-        vehicle_id = trip_details[0]['vehicle_id']
 
         direction = trip_details[0]['direction']
 
