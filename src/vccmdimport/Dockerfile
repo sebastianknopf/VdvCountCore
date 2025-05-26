@@ -7,11 +7,6 @@ WORKDIR /app
 COPY pyproject.toml /app
 RUN pip install --no-cache-dir .[mdimport]
 
-COPY .env /app
-COPY .env.dev /app
-COPY docker-compose.yaml /app
-COPY docker-compose.dev.yaml /app
-
 COPY src/ /app/src
 RUN pip install --no-deps .[mdimport]
 
