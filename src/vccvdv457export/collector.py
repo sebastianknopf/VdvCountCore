@@ -16,11 +16,11 @@ class PassengerCountingEventCollector:
         logging.info(f"Initializing {self.__class__.__name__} with {len(passenger_counting_events)} PCEs")
         self._passenger_counting_events = passenger_counting_events
 
-    def add(self, secondary_data: List[tuple]) -> None:
+    def add(self, secondary_data: List[tuple], consider_time: bool = True) -> None:
         passenger_counting_events = self._extract_passenger_counting_events(secondary_data)
 
         logging.info(f"Combining {len(passenger_counting_events)} secondary PCEs with {len(self._passenger_counting_events)} existing PCEs")
-        self._combine_passenger_counting_events(passenger_counting_events)
+        self._combine_passenger_counting_events(passenger_counting_events, consider_time)
             
     def verify(self) -> None:
         
@@ -105,12 +105,12 @@ class PassengerCountingEventCollector:
 
         return stop
 
-    def _combine_passenger_counting_events(self, passenger_counting_events: List[PassengerCountingEvent]) -> None:
+    def _combine_passenger_counting_events(self, passenger_counting_events: List[PassengerCountingEvent], consider_time: bool = True) -> None:
         # combine secondary PCE with existing PCE
         for secondary_pce in passenger_counting_events:
             combined: bool = False
             for existing_pce in self._passenger_counting_events:
-                if existing_pce.intersects(secondary_pce):
+                if existing_pce.intersects(secondary_pce, True, consider_time):
                     existing_pce.combine(secondary_pce)
 
                     # existing PCE found, no need to run through all other PCEs
