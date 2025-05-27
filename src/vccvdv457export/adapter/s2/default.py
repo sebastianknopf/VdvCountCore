@@ -160,7 +160,7 @@ class DefaultAdapter(BaseAdapter):
                         'Value': pce.stop.sequence
                     },
                     'StopRef': {
-                        'Value': pce.stop.id
+                        'Value': pce.stop.parent_id
                     },
                     'StopName': {
                         'Value': pce.stop.name,
