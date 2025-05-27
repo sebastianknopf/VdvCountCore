@@ -63,6 +63,7 @@ def _run_now():
                 raise ValueError(f"Unknown VDV457-2 adapter type {adapter_type}!")
             
             try:
+                logging.info(f"Running VDV457-2 converter {adapter_type} ...")
                 adapter.process(ddb, '/data/vdv4572')
             except Exception as ex:
                 any_converter_failed = True
@@ -84,6 +85,7 @@ def _run_now():
                 raise ValueError(f"Unknown VDV457-3 adapter type {adapter_type}!")
 
             try:
+                logging.info(f"Running VDV457-3 converter {adapter_type} ...")
                 adapter.process(ddb, '/data/vdv4573')
             except Exception as ex:
                 any_converter_failed = True
