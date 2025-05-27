@@ -8,6 +8,7 @@ from typing import List
 @dataclass
 class Stop:
     id: int
+    parent_id: int
     international_id: str|None = None
     latitude: float = 0.0
     longitude: float = 0.0
@@ -42,8 +43,13 @@ class PassengerCountingEvent:
         self.counting_sequences = list()
 
     def combine(self, pce: 'PassengerCountingEvent') -> None:
-        for cs in pce.counting_sequences:
-            self.counting_sequences.append(cs)
+        for counting_sequence in pce.counting_sequences:
+            existing_cs: CountingSequence = next((cs for cs in self.counting_sequences if cs.counting_area_id == counting_sequence.counting_area_id and cs.door_id == counting_sequence.door_id and cs.object_class == counting_sequence.object_class), None)
+            if existing_cs is not None:
+                existing_cs.count_in += counting_sequence.count_in
+                existing_cs.count_out += counting_sequence.count_out
+            else:
+                self.counting_sequences.append(counting_sequence)
 
     def intersects(self, pce: 'PassengerCountingEvent', consider_position: bool = True, consider_time: bool = True) -> bool:
         # check if stop ID and sequence or after_stop_sequence are the same
