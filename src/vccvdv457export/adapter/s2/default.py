@@ -138,8 +138,14 @@ class DefaultAdapter(BaseAdapter):
             # stop information
             if pce.stop is not None:
                 pce_xml['StopInformation'] = {
+                    'StopIndex': {
+                        'Value': pce.stop.sequence
+                    },
                     'StopRef': {
                         'Value': pce.stop.id
+                    },
+                    'StopName': {
+                        'Value': pce.stop.name
                     },
                     'PassengerRelated': {
                         'Value': 'true'
@@ -161,6 +167,11 @@ class DefaultAdapter(BaseAdapter):
                     'Value': line_name
                 },
                 'DirectionType': direction
+            }
+
+            # journey info
+            pce_xml['JourneyInfo'] = {
+                'ServiceJourneyRef': trip_id
             }
                 
             # GPS position
