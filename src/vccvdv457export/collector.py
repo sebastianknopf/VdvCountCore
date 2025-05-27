@@ -97,6 +97,7 @@ class PassengerCountingEventCollector:
     def _extract_stop(self, row: dict) -> Stop:
         stop: Stop = Stop()
         stop.id = row['stop_id']
+        stop.parent_id = row['stop_parent_id']
         stop.international_id = row['stop_international_id']
         stop.latitude = row['stop_latitude']
         stop.longitude = row['stop_longitude']
