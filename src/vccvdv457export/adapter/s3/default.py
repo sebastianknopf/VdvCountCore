@@ -2,6 +2,7 @@ import logging
 import os
 
 from datetime import datetime
+from datetime import timezone
 from itertools import chain
 from typing import Dict
 from typing import List
@@ -85,8 +86,8 @@ class DefaultAdapter(BaseAdapter):
             vehicle_id
         )
 
-        origin: int = trip_details[0]['stop_id']
-        destination: int = trip_details[-1]['stop_id']
+        origin: int = trip_details[0]['stop_parent_id']
+        destination: int = trip_details[-1]['stop_parent_id']
 
         direction = trip_details[0]['direction']
 
@@ -94,14 +95,17 @@ class DefaultAdapter(BaseAdapter):
         line_international_id = trip_details[0]['line_international_id']
         line_name = trip_details[0]['line_name']
 
+        departure_time: datetime = datetime.fromtimestamp(trip_details[0]['nom_departure_timestamp'], timezone.utc)
+        destination_time: datetime = datetime.fromtimestamp(trip_details[-1]['nom_arrival_timestamp'], timezone.utc)
+
         # build results dataset
         result: dict = {
             'PassengerCountingServiceJourney': {
                 'HeaderServiceJourney': {
                     'ServiceJourneyID': trip_id,
                     'DataType': 'RawData',
-                    'ServiceJourneyDepartureTime': '2025-05-27T00:01:01+00:00',
-                    'ServiceJourneyDestinationTime': '2025-05-27T00:01:01+00:00',
+                    'ServiceJourneyDepartureTime': departure_time.isoformat(),
+                    'ServiceJourneyDestinationTime': destination_time.isoformat(),
                     'Origin': origin,
                     'Destination': destination,
                     'Line': {
@@ -137,7 +141,7 @@ class DefaultAdapter(BaseAdapter):
                 'StopInformation': {
                     'StopStatus': 'normal',
                     'StopRef': {
-                        'Value': pce.stop.id
+                        'Value': pce.stop.parent_id
                     },
                     'StopName': {
                         'Value': pce.stop.name,
