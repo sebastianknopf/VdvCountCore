@@ -2,6 +2,7 @@ import logging
 import os
 
 from datetime import datetime
+from itertools import chain
 from typing import Dict
 from typing import List
 from typing import Set
@@ -11,6 +12,7 @@ from vcclib.common import isoformattime
 from vcclib.dataclasses import PassengerCountingEvent
 from vcclib.dataclasses import CountingSequence
 from vcclib.duckdb import DuckDB
+from vcclib.xml import dict2xml
 
 from vccvdv457export.adapter.base import BaseAdapter
 from vccvdv457export.collector import PassengerCountingEventCollector
@@ -75,7 +77,151 @@ class DefaultAdapter(BaseAdapter):
         return results
 
     def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str, passenger_counting_events: List[PassengerCountingEvent]) -> Tuple[tuple, str]:
-        pass
+        
+        # select trip details and obtain basic data
+        trip_details = ddb.get_trip_details(
+            operation_day,
+            trip_id,
+            vehicle_id
+        )
+
+        origin: int = trip_details[0]['stop_id']
+        destination: int = trip_details[-1]['stop_id']
+
+        direction = trip_details[0]['direction']
+
+        line_id = trip_details[0]['line_id']
+        line_international_id = trip_details[0]['line_international_id']
+        line_name = trip_details[0]['line_name']
+
+        # build results dataset
+        result: dict = {
+            'PassengerCountingServiceJourney': {
+                'HeaderServiceJourney': {
+                    'ServiceJourneyID': trip_id,
+                    'DataType': 'RawData',
+                    'ServiceJourneyDepartureTime': '2025-05-27T00:01:01+00:00',
+                    'ServiceJourneyDestinationTime': '2025-05-27T00:01:01+00:00',
+                    'Origin': origin,
+                    'Destination': destination,
+                    'Line': {
+                        'LineRef': {
+                            'Value': line_id
+                        },
+                        'LineName': {
+                            'Value': line_name,
+                            'Language': 'DE'
+                        },
+                        'DirectionType': direction
+                    }
+                },
+                'PassengerCountingMessage': {
+                    'HeaderData': {
+                        'TypeOfSurvey': 'manual',
+                        'AllVehiclesOfThisJourney': {
+                            'Value': 'false'
+                        },
+                        'AllCountingAreas': {
+                            'Value': 'false'
+                        },
+                        'VehicleID': vehicle_id
+                    },
+                    'PassengerCountingEvent': list()
+                }
+            }
+        }
+
+        for i, pce in enumerate(passenger_counting_events):
+
+            pce_xml = {
+                'StopInformation': {
+                    'StopStatus': 'normal',
+                    'StopRef': {
+                        'Value': pce.stop.id
+                    },
+                    'StopName': {
+                        'Value': pce.stop.name,
+                        'Language': 'DE'
+                    }
+                },
+                'CountingArea': list()
+            }
+
+            counting_area_ids: Set[str] = {cs.counting_area_id for cs in pce.counting_sequences}
+            door_ids: Set[str] = {cs.door_id for cs in pce.counting_sequences}
+            object_classes: Set[str] = {cs.object_class for cs in pce.counting_sequences}
+
+            # create counting sequences ...
+            for counting_area_id in counting_area_ids:
+                counting_area_xml: dict = {
+                    'AreaID': counting_area_id,
+                    'HeaderCounting': {
+                        'QueryType': 'departure',
+                        'SequentialNumber': i + 1,
+                        'TimeStamp': {
+                            'Value': pce.end_timestamp().isoformat()
+                        },
+                        'TimeStampEventStart': {
+                            'Value': pce.begin_timestamp().isoformat()
+                        },
+                        'TimeStampEventEnd': {
+                            'Value': pce.end_timestamp().isoformat()
+                        }
+                    },
+                    'Counting': list()
+                }
+
+                for door_id in door_ids:
+                    counting_xml: dict = {
+                        'DoorID': {
+                            'Value': door_id
+                        },
+                        'DoorState': {
+                            'OpenState': {
+                                'Value': 'AllDoorsClosed'
+                            },
+                            'OperationState': {
+                                'Value': 'Normal'
+                            }
+                        },
+                        'Count': list()
+                    }
+
+                    # sum up in and out per object class
+                    for object_class in object_classes:
+
+                        cs: CountingSequence = next((cs for cs in pce.counting_sequences if cs.counting_area_id == counting_area_id and cs.door_id == door_id and cs.object_class == object_class), None)
+                        if cs is not None:
+                            
+                            count_xml: dict = {
+                                'ObjectClass': object_class,
+                                'In': {
+                                    'Value': cs.count_in
+                                },
+                                'Out': {
+                                    'Value': cs.count_out
+                                }
+                            }
+
+                            counting_xml['Count'].append(count_xml)
+
+                    counting_area_xml['Counting'].append(counting_xml)
+
+                pce_xml['CountingArea'].append(counting_area_xml)
+
+            # finally add the PCE to the complete message
+            result['PassengerCountingServiceJourney']['PassengerCountingMessage']['PassengerCountingEvent'].append(pce_xml)
+
+        # return an XML result
+        attribute_mapping: dict = {
+            'HeaderCounting': [
+                'QueryType'
+            ]
+        }
+
+        xml = dict2xml('PassengerCountingServiceBGS_457-3.GetAllDataResponse', result, attribute_mapping)
+
+        return (operation_day, trip_id, vehicle_id), xml
 
     def _export(self, transformed_data: Dict[tuple, str], output_directory: str) -> None:   
         
