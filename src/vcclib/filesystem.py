@@ -16,10 +16,22 @@ def file_exists(directory: str, filename: str) -> bool:
         
     return False
 
-    
-def archive_directory_files(directory: str, defective: bool = False) -> None:
+def stage_directory_files(directory: str, stage: str) -> None:
     if directory_contains_files(directory):
-        archive_directory = os.path.join(directory, 'Archive' if not defective else 'Defective', datetime.now().strftime('%Y%m%d%H%M%S'))
+        if not os.path.exists(stage):
+            os.makedirs(stage)
+
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                if entry.is_file():
+                    s = entry.path
+                    d = os.path.join(stage, entry.name)
+
+                    shutil.move(s, d)
+    
+def archive_directory_files(directory: str, desination: str, defective: bool = False) -> None:
+    if directory_contains_files(directory):
+        archive_directory = os.path.join(desination, 'Archive' if not defective else 'Defective', datetime.now().strftime('%Y%m%d%H%M%S'))
         os.makedirs(archive_directory)
 
         with os.scandir(directory) as entries:

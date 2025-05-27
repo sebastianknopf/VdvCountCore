@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,6 @@ description = "VdvCoundCore - Backend System for VdvCount"
 authors = [{ name = "Sebastian Knopf", email = "mail@sebastian-knopf.de" }]
 readme = "README.md"
 license = {text = "Apache License (2.0)"}
-version="0.0.1"
 dependencies = [
     "click",
     "croniter",
@@ -17,15 +16,24 @@ dependencies = [
 ]
 requires-python = ">=3.10"
 
+dynamic = ["version"]
+
 [project.optional-dependencies]
 vdv452import = [
     "sqlobject",
     "mysqlclient"
 ]
 
-vdvmdimport = [
+mdimport = [
     "sqlobject",
     "mysqlclient"
+]
+
+vdv457export = [
+    "duckdb",
+    "lxml",
+    "polars",
+    "pyarrow"
 ]
 
 api = [
@@ -37,5 +45,8 @@ api = [
 ]
 
 all = [
-    "vcc[vdv452import,api]"
+    "vcc[vdv452import,mdimport,api,vdv457export]"
 ]
+
+[tool.setuptools_scm]
+write_to = "src/vcclib/version.py"
