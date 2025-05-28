@@ -12,6 +12,7 @@ from typing import Tuple
 from vcclib.common import isoformattime
 from vcclib.dataclasses import PassengerCountingEvent
 from vcclib.dataclasses import CountingSequence
+from vcclib.dataclasses import Trip
 from vcclib.duckdb import DuckDB
 from vcclib.xml import dict2xml
 
@@ -80,23 +81,19 @@ class DefaultAdapter(BaseAdapter):
     def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str, passenger_counting_events: List[PassengerCountingEvent]) -> Tuple[tuple, str]:
         
         # select trip details and obtain basic data
-        trip_details = ddb.get_trip_details(
-            operation_day,
-            trip_id,
-            vehicle_id
-        )
+        trip: Trip = self.load_trip_details(ddb, operation_day, trip_id, vehicle_id)
 
-        origin: int = trip_details[0]['stop_parent_id']
-        destination: int = trip_details[-1]['stop_parent_id']
+        origin: int = trip.stop_times[0].stop.parent_id
+        destination: int = trip.stop_times[-1].stop.parent_id
+        
+        departure_time: datetime = trip.stop_times[0].departure_time
+        destination_time: datetime = trip.stop_times[-1].arrival_time
 
-        direction = trip_details[0]['direction']
+        direction = trip.direction
 
-        line_id = trip_details[0]['line_id']
-        line_international_id = trip_details[0]['line_international_id']
-        line_name = trip_details[0]['line_name']
-
-        departure_time: datetime = datetime.fromtimestamp(trip_details[0]['nom_departure_timestamp'], timezone.utc)
-        destination_time: datetime = datetime.fromtimestamp(trip_details[-1]['nom_arrival_timestamp'], timezone.utc)
+        line_id = trip.line.id
+        line_international_id = trip.line.international_id
+        line_name = trip.line.name
 
         # build results dataset
         result: dict = {
