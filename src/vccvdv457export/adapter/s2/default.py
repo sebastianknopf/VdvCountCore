@@ -135,6 +135,24 @@ class DefaultAdapter(BaseAdapter):
                 }
             }
 
+            # journey info
+            pce_xml['JourneyInfo'] = {
+                'BlockRef': 0,
+                'ServiceJourneyRef': trip_id
+            }
+            
+            # line information
+            pce_xml['Line'] = {
+                'LineRef': {
+                    'Value': line_id
+                },
+                'LineName': {
+                    'Value': line_name,
+                    'Language': 'DE'
+                },
+                'DirectionType': direction
+            }
+
             # stop information
             if pce.stop is not None:
                 pce_xml['StopInformation'] = {
@@ -142,10 +160,11 @@ class DefaultAdapter(BaseAdapter):
                         'Value': pce.stop.sequence
                     },
                     'StopRef': {
-                        'Value': pce.stop.id
+                        'Value': pce.stop.parent_id
                     },
                     'StopName': {
-                        'Value': pce.stop.name
+                        'Value': pce.stop.name,
+                        'Language': 'DE'
                     },
                     'PassengerRelated': {
                         'Value': 'true'
@@ -157,22 +176,6 @@ class DefaultAdapter(BaseAdapter):
                         'Value': 'true'
                     }
                 }
-            
-            # line information
-            pce_xml['Line'] = {
-                'LineRef': {
-                    'Value': line_id
-                },
-                'LineNumber': {
-                    'Value': line_name
-                },
-                'DirectionType': direction
-            }
-
-            # journey info
-            pce_xml['JourneyInfo'] = {
-                'ServiceJourneyRef': trip_id
-            }
                 
             # GPS position
             pce_xml['GNSS'] = {
@@ -180,22 +183,28 @@ class DefaultAdapter(BaseAdapter):
                     'Longitude': {
                         'Degree': {
                             'Value': pce.longitude
+                        },
+                        'Direction': {
+                            'Value': 0
                         }
                     },
                     'Latitude': {
                         'Degree': {
                             'Value': pce.latitude
+                        },
+                        'Direction': {
+                            'Value': 0
                         }
-                    },
-                    'time': {
-                        'Value': isoformattime(pce.end_timestamp())
-                    },
-                    'date': {
-                        'Value': pce.end_timestamp().strftime('%Y-%m-%d')
-                    },
-                    'GNSS_Type': 'GPS',
-                    'GNSSCoordinateSystem': 'WGS84'
-                }
+                    }
+                },
+                'time': {
+                    'Value': isoformattime(pce.end_timestamp())
+                },
+                'date': {
+                    'Value': pce.end_timestamp().strftime('%Y-%m-%d')
+                },
+                'GNSS_Type': 'GPS',
+                'GNSSCoordinateSystem': 'WGS84'
             }
 
             # resolve counting areas, door IDs and object classes
@@ -213,6 +222,14 @@ class DefaultAdapter(BaseAdapter):
 
                 for door_id in door_ids:
                     counting_xml: dict = {
+                        'CountInfo': {
+                            'DoorOpenTime': {
+                                'Value': None
+                            },
+                            'DoorClosingTime': {
+                                'Value': None
+                            }
+                        },
                         'DoorID': {
                             'Value': door_id
                         },
@@ -224,22 +241,16 @@ class DefaultAdapter(BaseAdapter):
                                 'Value': 'Normal'
                             }
                         },
+                        'CountingOperationState': 'normal',
                         'Count': list()
                     }
 
                     for object_class in object_classes:
                         cs: CountingSequence = next((cs for cs in pce.counting_sequences if cs.counting_area_id == counting_area_id and cs.door_id == door_id and cs.object_class == object_class), None)
                         if cs is not None:
-                            
-                            if 'CountInfo' not in counting_xml:
-                                counting_xml['CountInfo'] = {
-                                    'DoorOpenTime': {
-                                        'Value': cs.begin_timestamp.isoformat()
-                                    },
-                                    'DoorClosingTime': {
-                                        'Value': cs.end_timestamp.isoformat()
-                                    }
-                                }
+
+                            counting_xml['CountInfo']['DoorOpenTime']['Value'] = cs.begin_timestamp.isoformat()
+                            counting_xml['CountInfo']['DoorClosingTime']['Value'] = cs.end_timestamp.isoformat()
 
                             count_xml: dict = {
                                 'ObjectClass': object_class,
