@@ -19,6 +19,35 @@ class Stop:
         pass
 
 @dataclass
+class Line:
+    id: int
+    international_id: str
+    name: str
+
+    def __init__(self) -> None:
+        pass
+
+@dataclass
+class StopTime:
+    arrival_time: datetime|None
+    departure_time: datetime|None
+    stop: Stop
+
+    def __init__(self) -> None:
+        pass
+
+@dataclass    
+class Trip:
+    id: int
+    vehicle_id: int
+    direction: int
+    line: Line
+    stop_times: List[StopTime] = field(default_factory=list)
+
+    def __init__(self) -> None:
+        self.stop_times = list()
+
+@dataclass
 class CountingSequence:
     door_id: str
     counting_area_id: str
@@ -108,7 +137,7 @@ class PassengerCountingEvent:
 
         return sum
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.stop is not None:
             return f"StopID={self.stop.id}, StopSequence={self.stop.sequence}, Begin={self.begin_timestamp().strftime('%Y-%m-%d %H:%M:%S')}, End={self.end_timestamp().strftime('%Y-%m-%d %H:%M:%S')}, Latitude={self.latitude}, Longitude={self.longitude}, In={self.count_in()}, Out={self.count_out()}"
         else:
