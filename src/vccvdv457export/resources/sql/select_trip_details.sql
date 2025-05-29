@@ -33,9 +33,9 @@ SELECT operation_day,
        line_international_id,
        line_name
 FROM counted_stops
-WHERE operation_day = 20250521
-    AND trip_id = 4367
-    AND vehicle_id = 'PF-ER-181'
+WHERE operation_day = ?
+    AND trip_id = ?
+    AND vehicle_id = ?
 GROUP BY
 	operation_day,
 	trip_id,
