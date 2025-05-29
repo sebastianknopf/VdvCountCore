@@ -1,7 +1,6 @@
 WITH expanded_trip AS
     (SELECT operation_day,
             trip_id,
-            device_id,
             vehicle_id,
             counted_stop_times,
             direction,
@@ -10,7 +9,6 @@ WITH expanded_trip AS
      counted_stops AS
     (SELECT operation_day,
             trip_id,
-            device_id,
             vehicle_id,
             direction,
             line_id,
@@ -20,7 +18,6 @@ WITH expanded_trip AS
      FROM expanded_trip)
 SELECT operation_day,
        trip_id,
-       device_id,
        vehicle_id,
        counted_stop.arrival_timestamp AS nom_arrival_timestamp,
        counted_stop.departure_timestamp AS nom_departure_timestamp,
@@ -36,6 +33,15 @@ SELECT operation_day,
        line_international_id,
        line_name
 FROM counted_stops
-WHERE operation_day = ?
-    AND trip_id = ?
-    AND vehicle_id = ?
+WHERE operation_day = 20250521
+    AND trip_id = 4367
+    AND vehicle_id = 'PF-ER-181'
+GROUP BY
+	operation_day,
+	trip_id,
+	vehicle_id,
+	counted_stop,
+	direction,
+	line_id,
+	line_international_id,
+	line_name
