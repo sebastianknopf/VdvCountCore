@@ -18,6 +18,7 @@ from vcclib.xml import dict2xml
 
 from vccvdv457export.adapter.base import BaseAdapter
 from vccvdv457export.collector import PassengerCountingEventCollector
+from vccvdv457export.extender import PassengerCountingEventExtender
 
 class DefaultAdapter(BaseAdapter):
 
@@ -94,6 +95,10 @@ class DefaultAdapter(BaseAdapter):
         line_id = trip.line.id
         line_international_id = trip.line.international_id
         line_name = trip.line.name
+
+        # extend PCEs to nominal stops
+        extender: PassengerCountingEventExtender = PassengerCountingEventExtender(trip)
+        passenger_counting_events = extender.extend(passenger_counting_events)
 
         # build results dataset
         result: dict = {
