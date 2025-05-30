@@ -10,12 +10,14 @@ from typing import Tuple
 from vcclib.common import isoformattime
 from vcclib.dataclasses import PassengerCountingEvent
 from vcclib.dataclasses import CountingSequence
+from vcclib.dataclasses import Trip
 from vcclib.duckdb import DuckDB
 from vcclib.version import version
 from vcclib.xml import dict2xml
 
 from vccvdv457export.adapter.base import BaseAdapter
 from vccvdv457export.collector import PassengerCountingEventCollector
+from vccvdv457export.extender import PassengerCountingEventExtender
 
 class DefaultAdapter(BaseAdapter):
 
@@ -79,17 +81,17 @@ class DefaultAdapter(BaseAdapter):
     def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str, passenger_counting_events: List[PassengerCountingEvent]) -> Tuple[tuple, str]:
 
         # select trip details and obtain basic data
-        trip_details = ddb.get_trip_details(
-            operation_day,
-            trip_id,
-            vehicle_id
-        )
+        trip: Trip = self.load_trip_details(ddb, operation_day, trip_id, vehicle_id)
 
-        direction = trip_details[0]['direction']
+        direction = trip.direction
 
-        line_id = trip_details[0]['line_id']
-        line_international_id = trip_details[0]['line_international_id']
-        line_name = trip_details[0]['line_name']
+        line_id = trip.line.id
+        line_international_id = trip.line.international_id
+        line_name = trip.line.name
+
+        # extend PCEs to nominal stops
+        extender: PassengerCountingEventExtender = PassengerCountingEventExtender(trip)
+        passenger_counting_events = extender.extend(passenger_counting_events)
 
         # build results dataset
         result: dict = {
