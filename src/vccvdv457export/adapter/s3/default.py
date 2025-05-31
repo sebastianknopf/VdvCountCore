@@ -13,6 +13,7 @@ from vcclib.common import isoformattime
 from vcclib.dataclasses import PassengerCountingEvent
 from vcclib.dataclasses import CountingSequence
 from vcclib.dataclasses import Trip
+from vcclib.dataclasses import Stop
 from vcclib.duckdb import DuckDB
 from vcclib.xml import dict2xml
 
@@ -95,6 +96,9 @@ class DefaultAdapter(BaseAdapter):
         line_id = trip.line.id
         line_international_id = trip.line.international_id
         line_name = trip.line.name
+
+        # update unmatched PCEs to their corresponding stop
+        passenger_counting_events = self._update_unmatched_pces(trip, passenger_counting_events)
 
         # extend PCEs to nominal stops
         extender: PassengerCountingEventExtender = PassengerCountingEventExtender(trip)
@@ -248,3 +252,32 @@ class DefaultAdapter(BaseAdapter):
             with open(output_filename, 'wb') as output_file:
                 output_file.write(b'<?xml version="1.0" encoding="UTF-8" ?>\n')
                 output_file.write(x)
+
+    def _update_unmatched_pces(self, trip: Trip, passenger_counting_events: List[PassengerCountingEvent]) -> List[PassengerCountingEvent]:
+
+        logging.info(f"Updating unmatched PCEs ...")
+
+        # 1. Update all PCEs with after_stop_sequence != -1 to the corresponding stop
+        for i in range(0, len(passenger_counting_events)):
+            if passenger_counting_events[i].after_stop_sequence != -1:
+                stop_sequence: int = passenger_counting_events[i].after_stop_sequence
+                if len(trip.stop_times) > stop_sequence:
+                    stop: Stop = trip.stop_times[stop_sequence - 1].stop
+
+                    passenger_counting_events[i].after_stop_sequence = -1
+                    passenger_counting_events[i].stop = stop
+
+        # 2. Group all PCEs by their stop with reference to the nominal stop time
+        matched_passenger_counting_events: List[PassengerCountingEvent] = list()
+        for stop_time in trip.stop_times:
+            matching_pces: List[PassengerCountingEvent] = [pce for pce in passenger_counting_events if pce.stop is not None and pce.stop.id == stop_time.stop.id and pce.stop.sequence == stop_time.stop.sequence]
+            if len(matching_pces) == 1:
+                matched_passenger_counting_events.append(matching_pces[0])
+            elif len(matching_pces) > 1:
+                primary_pce: PassengerCountingEvent = matching_pces[0]
+                for i in range(1, len(matching_pces)):
+                    primary_pce.combine(matching_pces[i])
+
+                matched_passenger_counting_events.append(primary_pce)        
+        
+        return matched_passenger_counting_events
