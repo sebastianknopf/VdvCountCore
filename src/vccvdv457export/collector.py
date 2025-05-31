@@ -74,7 +74,7 @@ class PassengerCountingEventCollector:
                     stop: Stop = self._extract_stop(row)
                     pce.stop = stop
                 else:
-                    pce.after_stop_sequence = row['after_stop_sequence']
+                    pce.after_stop_sequence = row['pce_after_stop_sequence']
 
         # add final PCE to results
         if pce is not None:
