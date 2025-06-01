@@ -172,12 +172,14 @@ class DefaultAdapter(BaseAdapter):
                         'Value': 'true'
                     }
                 }
-            else:
+            # do not generate StopInformation at all, if there's no stop available
+            # validation agains XSD fails in that case
+            """else:
                 pce_xml['StopInformation'] = {
                     'PassengerRelated': {
                         'Value': 'true'
                     }
-                }
+                }"""
                 
             # GPS position
             pce_xml['GNSS'] = {

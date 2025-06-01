@@ -42,6 +42,7 @@ class Trip:
     vehicle_id: int
     direction: int
     line: Line
+    international_id: str|None = None
     stop_times: List[StopTime] = field(default_factory=list)
 
     def __init__(self) -> None:

@@ -53,7 +53,7 @@ class PassengerCountingEventExtender:
         logging.info(f"Generating temporal sequence for {len(result)} PCE ...")
         result = self._ensure_temporal_sequence(result)
 
-        return result
+        return sorted(result, key=lambda p: p.end_timestamp())
     
     def _ensure_temporal_sequence(self, passenger_counting_events: List[PassengerCountingEvent], min_delta_minutes: float = 0.166667) -> List[PassengerCountingEvent]:
 
