@@ -40,7 +40,7 @@ class PassengerCountingEventCollector:
                 logging.warning(f"{p + 1}. PCE overlaps {p}. PCE in timestamp and remains to different stops")
 
     def get_passenger_counting_events(self) -> List[PassengerCountingEvent]:
-        return self._passenger_counting_events
+        return sorted(self._passenger_counting_events, key=lambda p: p.end_timestamp())
     
     def _extract_passenger_counting_events(self, data: List[tuple]) -> List[PassengerCountingEvent]:
         results: List[PassengerCountingEvent] = list()
