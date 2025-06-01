@@ -258,19 +258,21 @@ class DefaultAdapter(BaseAdapter):
         logging.info(f"Updating unmatched PCEs ...")
 
         # 1. Update all PCEs with after_stop_sequence != -1 to the corresponding stop
-        for i in range(0, len(passenger_counting_events)):
-            if passenger_counting_events[i].after_stop_sequence != -1:
-                stop_sequence: int = passenger_counting_events[i].after_stop_sequence
+        for pce in passenger_counting_events:
+            if pce.after_stop_sequence != -1:
+                stop_sequence: int = pce.after_stop_sequence
                 if len(trip.stop_times) > stop_sequence:
                     stop: Stop = trip.stop_times[stop_sequence - 1].stop
 
-                    passenger_counting_events[i].after_stop_sequence = -1
-                    passenger_counting_events[i].stop = stop
+                    pce.after_stop_sequence = -1
+                    pce.stop = stop
 
         # 2. Group all PCEs by their stop with reference to the nominal stop time
         matched_passenger_counting_events: List[PassengerCountingEvent] = list()
-        for stop_time in trip.stop_times:
-            matching_pces: List[PassengerCountingEvent] = [pce for pce in passenger_counting_events if pce.stop is not None and pce.stop.id == stop_time.stop.id and pce.stop.sequence == stop_time.stop.sequence]
+
+        stop_sequences: Set[int] = {pce.stop.sequence for pce in passenger_counting_events if pce.after_stop_sequence == -1}
+        for s in stop_sequences:
+            matching_pces: List[PassengerCountingEvent] = [pce for pce in passenger_counting_events if pce.stop is not None and pce.stop.sequence == s]
             if len(matching_pces) == 1:
                 matched_passenger_counting_events.append(matching_pces[0])
             elif len(matching_pces) > 1:
@@ -278,6 +280,6 @@ class DefaultAdapter(BaseAdapter):
                 for i in range(1, len(matching_pces)):
                     primary_pce.combine(matching_pces[i])
 
-                matched_passenger_counting_events.append(primary_pce)        
+                matched_passenger_counting_events.append(primary_pce)       
         
-        return matched_passenger_counting_events
+        return sorted(matched_passenger_counting_events, key=lambda p: p.end_timestamp())
