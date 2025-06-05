@@ -91,6 +91,7 @@ services:
       - VCC_API_HOSTNAME
       - VCC_API_PORT
     volumes:
+      - ./src/resources:/etc/resources
       - ${VCC_API_DATA_DIRECTORY}:/data
       - ${VCC_API_LOG_DIRECTORY}:/logs
     depends_on:
@@ -112,7 +113,7 @@ services:
       - VCC_VDV457_EXPORT_CONVERT_3
       - VCC_VDV457_EXPORT_ADAPTER_TYPE_3
     volumes:
-      - ./src/vccvdv457export/resources:/etc/resources
+      - ./src/resources:/etc/resources
       - ${VCC_VDV457_EXPORT_DATA_DIRECORY}:/data/input
       - ${VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2}:/data/vdv4572
       - ${VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_3}:/data/vdv4573
