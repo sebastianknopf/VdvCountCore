@@ -140,6 +140,9 @@ class DuckDB:
 
         json_type = definition.get("type")
 
+        if isinstance(json_type, list) and len(json_type) > 0:
+            json_type = json_type[0]
+
         if json_type == "array":
             items = definition.get("items", [])
             inner_type = self._resolve_type(name + "_item", items)
