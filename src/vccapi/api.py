@@ -10,12 +10,16 @@ from fastapi import FastAPI, Request, Response
 from qrcode import QRCode, constants
 
 from vcclib import database
+from vcclib.common import is_debug
 from vcclib.model import Stop
 from vcclib.model import Trip
 from vcclib.model import MasterDataVehicle
 from vcclib.model import MasterDataObjectClass
 
 from vcclib.model import sqlobject2dict
+
+# set logging default configuration
+logging.basicConfig(format="[%(levelname)s] %(asctime)s %(message)s", level=logging.INFO)
 
 # init database connection
 database.init()
@@ -105,7 +109,7 @@ async def results_post(guid, request: Request):
             json.dump(data, file, ensure_ascii=False, indent=4)
 
     except ValidationError as ex:
-        if os.getenv('VCC_DEBUG', 'false').lower() == 'true':
+        if is_debug():
             logging.exception(ex)
         else:
             logging.error("Failed to process JSON result data")
