@@ -5,6 +5,7 @@ import pytz
 
 from datetime import datetime
 from io import BytesIO
+from jsonschema import validate, ValidationError
 from fastapi import FastAPI, Request, Response
 from qrcode import QRCode, constants
 
@@ -91,11 +92,25 @@ async def masterdata_objectclasses():
 
 @app.post('/results/post/{guid}')
 async def results_post(guid, request: Request):
-    
-    data = await request.json()
 
-    with open(f"/data/{guid}.json", 'w+') as file:
-        json.dump(data, file, ensure_ascii=False, indent=4)
+    with open('/etc/resources/json/schema.json', 'r') as schema_file:
+        schema = json.load(schema_file)
+
+    try:
+        data = await request.json()
+
+        validate(instance=data, schema=schema)
+
+        with open(f"/data/{guid}.json", 'w+') as file:
+            json.dump(data, file, ensure_ascii=False, indent=4)
+
+    except ValidationError as ex:
+        if os.getenv('VCC_DEBUG', 'false').lower() == 'true':
+            logging.exception(ex)
+        else:
+            logging.error("Failed to process JSON result data")
+
+        return Response(status_code=422)
 
     return Response(status_code=200)
 
@@ -118,7 +133,7 @@ async def logs_post(device_guid, request: Request):
             file.write(text)
 
     except UnicodeDecodeError:
-        return Response(status_code=400)
+        return Response(status_code=422)
 
     return Response(status_code=200)
 

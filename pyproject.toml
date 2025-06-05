@@ -37,6 +37,7 @@ vdv457export = [
 ]
 
 api = [
+    "jsonschema",
     "sqlobject",
     "mysqlclient",
     "fastapi",
