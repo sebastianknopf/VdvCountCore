@@ -47,7 +47,7 @@ class PassengerCountingEventCollector:
 
         pce: PassengerCountingEvent|None = None
         for row in data:
-            if row['stop_id'] is not None and pce is not None and pce.stop.id == row['stop_id']:
+            if row['stop_id'] is not None and pce is not None and pce.stop is not None and pce.stop.id == row['stop_id']:
                 # generate CountingSequence and add it to existing PCE
                 cs: CountingSequence = self._extract_counting_sequence(row)
                 pce.counting_sequences.append(cs)
