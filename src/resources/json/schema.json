@@ -86,7 +86,7 @@
                 "type": "object",
                 "properties": {
                   "international_id": {
-                    "type": "string"
+                    "type": ["string", "null"]
                   },
                   "latitude": {
                     "type": "number"
@@ -204,13 +204,13 @@
         "type": "string"
       },
       "international_id": {
-        "type": "string"
+        "type": ["string", "null"]
       },
       "line": {
         "type": "object",
         "properties": {
           "international_id": {
-            "type": "string"
+            "type": ["string", "null"]
           },
           "line_id": {
             "type": "integer"
