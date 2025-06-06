@@ -138,6 +138,13 @@ class PassengerCountingEvent:
 
         return sum
     
+    def is_run_through(self) -> bool:
+        counting_sequence: CountingSequence = self.counting_sequences[0] if len(self.counting_sequences) > 0 else None
+        if counting_sequence is not None:
+            return counting_sequence.door_id == '0' and counting_sequence.begin_timestamp == counting_sequence.end_timestamp
+        
+        return False
+    
     def __repr__(self) -> str:
         if self.stop is not None:
             return f"StopID={self.stop.id}, StopSequence={self.stop.sequence}, Begin={self.begin_timestamp().strftime('%Y-%m-%d %H:%M:%S')}, End={self.end_timestamp().strftime('%Y-%m-%d %H:%M:%S')}, Latitude={self.latitude}, Longitude={self.longitude}, In={self.count_in()}, Out={self.count_out()}"
