@@ -276,6 +276,11 @@ class DefaultAdapter(BaseAdapter):
             if len(matching_pces) == 1:
                 matched_passenger_counting_events.append(matching_pces[0])
             elif len(matching_pces) > 1:
+                # filter on all real (not run-through!) PCEs 
+                # see #28 for more information
+                matching_pces = [pce for pce in matching_pces if not pce.is_run_through()]
+
+                # then map all remaining PCEs together to one
                 primary_pce: PassengerCountingEvent = matching_pces[0]
                 for i in range(1, len(matching_pces)):
                     primary_pce.combine(matching_pces[i])
