@@ -257,12 +257,13 @@ class DefaultAdapter(BaseAdapter):
 
         logging.info(f"Updating unmatched PCEs ...")
 
-        # 1. Update all PCEs with after_stop_sequence != -1 to the corresponding stop
+        # 1. Update all PCEs with after_stop_sequence != -1 to the NEXT stop
+        # see #30 for details
         for pce in passenger_counting_events:
             if pce.after_stop_sequence != -1:
                 stop_sequence: int = pce.after_stop_sequence
                 if len(trip.stop_times) > stop_sequence:
-                    stop: Stop = trip.stop_times[stop_sequence - 1].stop
+                    stop: Stop = trip.stop_times[stop_sequence].stop
 
                     pce.after_stop_sequence = -1
                     pce.stop = stop
