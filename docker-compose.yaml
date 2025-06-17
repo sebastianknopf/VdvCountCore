@@ -90,6 +90,7 @@ services:
       - VCC_API_SCHEME
       - VCC_API_HOSTNAME
       - VCC_API_PORT
+      - VCC_API_PUBLIC_BASE_URL
     volumes:
       - ./src/resources:/etc/resources
       - ${VCC_API_DATA_DIRECTORY}:/data
