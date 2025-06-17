@@ -148,6 +148,8 @@ async def system_setup():
     api_hostname = os.getenv('VCC_API_HOSTNAME', 'localhost')
     api_port = os.getenv('VCC_API_PORT', '443')
 
+    api_public_base_url: str = os.getenv('VCC_API_PUBLIC_BASE_URL', None)
+
     vcc_username = os.getenv('VCC_USERNAME', None)
     vcc_password = os.getenv('VCC_PASSWORD', None)
 
@@ -155,7 +157,11 @@ async def system_setup():
         logging.error('Either environment variable VCC_USERNAME or VCC_PASSWORD not configured!')
         return Response(status_code=500)
     
-    setup_config = f"{api_scheme}://{vcc_username}:{vcc_password}@{api_hostname}:{api_port}/"
+    if api_public_base_url is not None:
+        api_scheme, api_base_url = api_public_base_url.split('://')
+        setup_config = f"{api_scheme}://{vcc_username}:{vcc_password}@{api_base_url}"
+    else:
+        setup_config = f"{api_scheme}://{vcc_username}:{vcc_password}@{api_hostname}:{api_port}/"
     
     # generate QR code response
     qr = QRCode(
