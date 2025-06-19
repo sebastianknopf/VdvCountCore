@@ -3,6 +3,7 @@ import os
 import pytz
 
 from datetime import datetime
+from typing import Tuple
 
 from vcclib import database
 from vcclib.model import Stop
@@ -13,6 +14,7 @@ from vcclib.filesystem import directory_contains_files
 from vcclib.filesystem import file_exists
 from vcclib.x10 import read_x10_file, X10File
 from vccvdv452import.adapter.base import BaseAdapter
+
 
 class DefaultAdapter(BaseAdapter):
 
@@ -46,104 +48,11 @@ class DefaultAdapter(BaseAdapter):
             logging.info('Loading network data ...')
 
             # load and import stop objects
-            stop_index = dict()
-
-            transaction = database.connection().transaction()
-            transaction_count = 0
-
-            x10_rec_ort = self._internal_read_x10_file(input_directory, 'rec_ort.x10')
-            for i, record in enumerate(x10_rec_ort.records):
-                try:
-                    if record['ONR_TYP_NR'] == 1:
-                        stop_id = record['ORT_NR']
-                        name = record['ORT_REF_ORT_NAME']
-                        latitude = self._convert_coordinate(record['ORT_POS_BREITE'])
-                        longitude = self._convert_coordinate(record['ORT_POS_LAENGE'])
-                        parent_id = record['ORT_REF_ORT']
-
-                        if 'HST_NR_INTERNATIONAL' in record:
-                            international_id = record['HST_NR_INTERNATIONAL']
-                        elif 'ORT_GLOBAL_ID' in record:
-                            international_id = record['ORT_GLOBAL_ID']
-                        else:
-                            international_id = None
-
-                        stop_index[stop_id] = Stop(
-                            stop_id=stop_id,
-                            name=name,
-                            latitude=latitude,
-                            longitude=longitude,
-                            international_id=international_id,
-                            parent_id=parent_id,
-                            connection=transaction
-                        )
-
-                    if transaction_count >= batch_size or i >= len(x10_rec_ort.records) - 1:
-                        transaction.commit()
-
-                        transaction = database.connection().transaction()
-                        transaction_count = 0
-
-                except Exception as ex:
-                    transaction.rollback()
-                    transaction_count = 0
-
-                    if not i >= len(x10_rec_ort.records):
-                        transaction = database.connection().transaction()
-
-                    logging.exception(ex)
-
-            x10_rec_ort.close()
+            stop_index: dict = self._extract_stop_data(input_directory, batch_size)
 
             # load and import line objects
-            line_index = dict()
-            line_direction_index = dict()
-
-            transaction = database.connection().transaction()
-            transation_count = 0
-
-            x10_rec_lid = self._internal_read_x10_file(input_directory, 'rec_lid.x10')
-            for i, record in enumerate(x10_rec_lid.records):
-                try:
-                    line_id = record['LI_NR']
-                    line_variant_id = record['STR_LI_VAR']
-                    direction = record['LI_RI_NR']
-                    name = record['LIDNAME']
-                    
-                    if 'LinienID' in record:
-                        international_id = record['LinienID']
-                    else:
-                        international_id = None
-
-                    if (line_id, line_variant_id) not in line_direction_index:
-                        line_direction_index[(line_id, line_variant_id)] = direction
-
-                    if line_id not in line_index:
-                        line_index[line_id] = Line(
-                            line_id=line_id, 
-                            name=name,
-                            international_id=international_id, 
-                            connection=transaction
-                        )
-
-                        transation_count = transation_count + 1
-
-                    if transation_count >= batch_size or i >= len(x10_rec_lid.records) - 1:
-                        transaction.commit()
-
-                        transaction = database.connection().transaction()
-                        transation_count = 0
-
-                except Exception as ex:
-                    transaction.rollback()
-                    transaction_count = 0
-
-                    if not i >= len(x10_rec_lid.records) - 1:
-                        transaction = database.connection().transaction()
-
-                    logging.exception(ex)
-        
-            x10_rec_lid.close()
+            line_data: Tuple[dict, dict] = self._extract_line_data(input_directory, batch_size)
+            line_index, line_direction_index = line_data
 
             # load timetable information data ...  
             logging.info('Loading timetable information data ...')
@@ -330,6 +239,110 @@ class DefaultAdapter(BaseAdapter):
         
         except Exception as ex:
             logging.exception(ex)
+
+    def _extract_stop_data(self, input_directory: str, batch_size: int) -> dict:
+        stop_index = dict()
+
+        transaction = database.connection().transaction()
+        transaction_count = 0
+
+        x10_rec_ort = self._internal_read_x10_file(input_directory, 'rec_ort.x10')
+        for i, record in enumerate(x10_rec_ort.records):
+            try:
+                if record['ONR_TYP_NR'] == 1:
+                    stop_id = record['ORT_NR']
+                    name = record['ORT_REF_ORT_NAME']
+                    latitude = self._convert_coordinate(record['ORT_POS_BREITE'])
+                    longitude = self._convert_coordinate(record['ORT_POS_LAENGE'])
+                    parent_id = record['ORT_REF_ORT']
+
+                    if 'HST_NR_INTERNATIONAL' in record:
+                        international_id = record['HST_NR_INTERNATIONAL']
+                    elif 'ORT_GLOBAL_ID' in record:
+                        international_id = record['ORT_GLOBAL_ID']
+                    else:
+                        international_id = None
+
+                    stop_index[stop_id] = Stop(
+                        stop_id=stop_id,
+                        name=name,
+                        latitude=latitude,
+                        longitude=longitude,
+                        international_id=international_id,
+                        parent_id=parent_id,
+                        connection=transaction
+                    )
+
+                if transaction_count >= batch_size or i >= len(x10_rec_ort.records) - 1:
+                    transaction.commit()
+
+                    transaction = database.connection().transaction()
+                    transaction_count = 0
+
+            except Exception as ex:
+                transaction.rollback()
+                transaction_count = 0
+
+                if not i >= len(x10_rec_ort.records):
+                    transaction = database.connection().transaction()
+
+                logging.exception(ex)
+
+        x10_rec_ort.close()
+
+        return stop_index
+
+    def _extract_line_data(self, input_directory: str, batch_size: int) -> Tuple[dict, dict]:
+        line_index: dict = dict()
+        line_direction_index: dict = dict()
+
+        transaction = database.connection().transaction()
+        transation_count = 0
+
+        x10_rec_lid = self._internal_read_x10_file(input_directory, 'rec_lid.x10')
+        for i, record in enumerate(x10_rec_lid.records):
+            try:
+                line_id = record['LI_NR']
+                line_variant_id = record['STR_LI_VAR']
+                direction = record['LI_RI_NR']
+                name = record['LIDNAME']
+                
+                if 'LinienID' in record:
+                    international_id = record['LinienID']
+                else:
+                    international_id = None
+
+                if (line_id, line_variant_id) not in line_direction_index:
+                    line_direction_index[(line_id, line_variant_id)] = direction
+
+                if line_id not in line_index:
+                    line_index[line_id] = Line(
+                        line_id=line_id, 
+                        name=name,
+                        international_id=international_id, 
+                        connection=transaction
+                    )
+
+                    transation_count = transation_count + 1
+
+                if transation_count >= batch_size or i >= len(x10_rec_lid.records) - 1:
+                    transaction.commit()
+
+                    transaction = database.connection().transaction()
+                    transation_count = 0
+
+            except Exception as ex:
+                transaction.rollback()
+                transaction_count = 0
+
+                if not i >= len(x10_rec_lid.records) - 1:
+                    transaction = database.connection().transaction()
+
+                logging.exception(ex)
+    
+        x10_rec_lid.close()
+
+        return line_index, line_direction_index
 
     def _verify(self, input_directory:str) -> bool:
         logging.info(f"Verifying files in input directory {input_directory} ...")
