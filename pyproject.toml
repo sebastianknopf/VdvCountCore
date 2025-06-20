@@ -32,7 +32,7 @@ mdimport = [
 vdv457export = [
     "duckdb",
     "lxml",
-    "polars",
+    "polars-lts-cpu",
     "pyarrow"
 ]
 
