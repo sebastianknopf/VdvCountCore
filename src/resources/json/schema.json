@@ -191,6 +191,30 @@
           }
         ]
       },
+      "way_points": {
+        "type": "array",
+        "items": [
+          {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              },
+              "timestamp": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "latitude",
+              "longitude",
+              "timestamp"
+            ]
+          }
+        ]
+      },
       "vca_version": {
         "type": "string"
       },
