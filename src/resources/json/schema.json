@@ -191,6 +191,12 @@
           }
         ]
       },
+      "vca_version": {
+        "type": "string"
+      },
+      "vehicle_id": {
+        "type": "string"
+      },
       "way_points": {
         "type": "array",
         "items": [
@@ -214,12 +220,6 @@
             ]
           }
         ]
-      },
-      "vca_version": {
-        "type": "string"
-      },
-      "vehicle_id": {
-        "type": "string"
       },
       "direction": {
         "type": "integer"
