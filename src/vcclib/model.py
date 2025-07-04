@@ -2,7 +2,7 @@ import re
 
 from difflib import SequenceMatcher
 from sqlobject import *
-from sqlobject.sqlbuilder import Select
+from sqlobject.sqlbuilder import Table, Select, LEFTJOIN
 
 from vcclib import database
 
@@ -15,7 +15,7 @@ class Stop(SQLObject):
     parent_id = IntCol()
 
     @classmethod
-    def lookup(cls, lookup_name:str):
+    def lookup(cls, lookup_name:str, only_starting_stations:bool = False):
         def normalize(input:str) -> str:
             normalized = input.lower().strip()
             normalized = re.sub(r"[^a-z0-9äöüß\s]", '', normalized)
@@ -29,17 +29,36 @@ class Stop(SQLObject):
 
             return normalized
         
+        # container for results
         result = list()
 
-        query = Select((
-            Stop.q.parent_id, 
-            Stop.q.name, 
-            f"AVG({Stop.q.latitude})", 
-            f"AVG({Stop.q.longitude})"
-        ), groupBy=[Stop.q.parent_id, Stop.q.name])
+        # build and run query on DB
+        # if only_starting_stations is True, restrict the query to all stations which
+        # have at least one starting trip on its stops
+        if only_starting_stations:
+            
+            stops_with_starting_trips: list[int] = [st.stop.stop_id for st in StopTime.select(StopTime.q.sequence == 1)]
+
+            query = Select((
+                Stop.q.parent_id, 
+                Stop.q.name, 
+                f"AVG({Stop.q.latitude})", 
+                f"AVG({Stop.q.longitude})"
+            ), 
+            where=IN(Stop.q.stop_id, stops_with_starting_trips),
+            groupBy=[Stop.q.parent_id, Stop.q.name])
+        else:
+            query = Select((
+                Stop.q.parent_id, 
+                Stop.q.name, 
+                f"AVG({Stop.q.latitude})", 
+                f"AVG({Stop.q.longitude})"
+            ), groupBy=[Stop.q.parent_id, Stop.q.name])
         
         query = database.connection().sqlrepr(query)
 
+        # create result set and order by similarity
+        # only the first 30 results are returned
         for s in database.connection().queryAll(query):
             obj = dict()
             obj['parent_id'] = s[0]
@@ -54,10 +73,13 @@ class Stop(SQLObject):
         return sorted(result, key=lambda s: s['similarity'], reverse=True)[:30]
 
     @classmethod
-    def departures(cls, parent_stop_id:int):
+    def departures(cls, parent_stop_id:int, only_starting_trips:bool=False):
         stops = cls.select(Stop.q.parent_id == parent_stop_id)
 
-        return StopTime.select((IN(StopTime.q.stop, stops)) & (StopTime.q.departure_timestamp != None)).orderBy(StopTime.q.departure_timestamp)
+        if only_starting_trips:
+            return StopTime.select((IN(StopTime.q.stop, stops)) & (StopTime.q.departure_timestamp != None) & (StopTime.q.sequence == 1)).orderBy(StopTime.q.departure_timestamp)
+        else:
+            return StopTime.select((IN(StopTime.q.stop, stops)) & (StopTime.q.departure_timestamp != None)).orderBy(StopTime.q.departure_timestamp)
 
 class Line(SQLObject):
     line_id = IntCol()

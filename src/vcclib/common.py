@@ -2,8 +2,12 @@ import os
 
 from datetime import datetime
 
+def is_set(variable_name: str) -> bool:
+    variable_value: str = os.getenv(variable_name, 'false').lower().strip()
+    return variable_value == 'true' or variable_value == '1'
+
 def is_debug() -> bool:
-    return os.getenv('VCC_DEBUG', 'false').lower() == 'true' or os.getenv('VCC_DEBUG', 'false') == '1'
+    return is_set('VCC_DEBUG')
 
 def isoformattime(dt: datetime) -> str:
     iso: str = dt.strftime('%H:%M:%S%z')
