@@ -11,6 +11,7 @@ from qrcode import QRCode, constants
 
 from vcclib import database
 from vcclib.common import is_debug
+from vcclib.common import is_set
 from vcclib.model import Stop
 from vcclib.model import Trip
 from vcclib.model import MasterDataVehicle
@@ -30,16 +31,16 @@ app = FastAPI()
 # define ressouces and routes
 @app.get('/stops/byLookupName/{lookup_name}')
 async def stops_by_name(lookup_name):
-    return Stop.lookup(lookup_name)
+    return Stop.lookup(lookup_name, is_set('VCC_API_ONLY_STARTING_TRIPS'))
 
 @app.get('/departures/byParentStopId/{parent_stop_id}')
 async def departures_by_parent_stop_id(parent_stop_id):
     parent_stop_id = int(parent_stop_id)
 
     reference_timestamp = datetime.now().timestamp() - 3600
-
+    
     result = list()
-    for d in Stop.departures(parent_stop_id):
+    for d in Stop.departures(parent_stop_id, is_set('VCC_API_ONLY_STARTING_TRIPS')):
         if d.departure_timestamp >= reference_timestamp:
             obj = {
                 'stop_id': d.stop.stop_id,
