@@ -91,6 +91,7 @@ services:
       - VCC_API_HOSTNAME
       - VCC_API_PORT
       - VCC_API_PUBLIC_BASE_URL
+      - VCC_API_ONLY_STARTING_TRIPS
     volumes:
       - ./src/resources:/etc/resources
       - ${VCC_API_DATA_DIRECTORY}:/data
