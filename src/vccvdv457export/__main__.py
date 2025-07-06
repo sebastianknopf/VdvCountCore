@@ -9,6 +9,7 @@ import vccvdv457export.adapter.s3.default as s3
 from croniter import croniter
 from datetime import datetime
 
+from vcclib.common import is_set
 from vcclib.duckdb import DuckDB
 from vcclib.filesystem import directory_contains_files
 from vcclib.filesystem import stage_directory_files
@@ -51,9 +52,7 @@ def _run_now():
         any_converter_failed = False
 
         # instantiate and run VDV457-2 conversion
-        vdv457_convert_2 = os.getenv('VCC_VDV457_EXPORT_CONVERT_2', 'false').lower()
-        if vdv457_convert_2 == 'true':   
-
+        if is_set('VCC_VDV457_EXPORT_CONVERT_2'):
             adapter: BaseAdapter = None
 
             adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_2', 'default')
@@ -73,9 +72,7 @@ def _run_now():
                     logging.error(str(ex))
 
         # instantiate and run VDV457-3 conversion
-        vdv457_convert_3 = os.getenv('VCC_VDV457_EXPORT_CONVERT_3', 'false').lower()
-        if vdv457_convert_3 == 'true':
-
+        if is_set('VCC_VDV457_EXPORT_CONVERT_3'):
             adapter: BaseAdapter = None
 
             adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_3', 'default')
