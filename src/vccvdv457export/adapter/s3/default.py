@@ -8,6 +8,7 @@ from typing import Dict
 from typing import List
 from typing import Set
 from typing import Tuple
+from xmltodict import unparse
 
 from vcclib.common import isoformattime
 from vcclib.dataclasses import PassengerCountingEvent
@@ -15,7 +16,6 @@ from vcclib.dataclasses import CountingSequence
 from vcclib.dataclasses import Trip
 from vcclib.dataclasses import Stop
 from vcclib.duckdb import DuckDB
-from vcclib.xml import dict2xml
 
 from vccvdv457export.adapter.base import BaseAdapter
 from vccvdv457export.collector import PassengerCountingEventCollector
@@ -166,7 +166,7 @@ class DefaultAdapter(BaseAdapter):
                 counting_area_xml: dict = {
                     'AreaID': counting_area_id,
                     'HeaderCounting': {
-                        'QueryType': 'departure',
+                        '@QueryType': 'departure',
                         'SequentialNumber': i + 1,
                         'TimeStamp': {
                             'Value': pce.end_timestamp().isoformat()
@@ -229,7 +229,9 @@ class DefaultAdapter(BaseAdapter):
             ]
         }
 
-        xml = dict2xml('PassengerCountingServiceBGS_457-3.GetAllDataResponse', result, attribute_mapping)
+        xml = unparse({
+            'PassengerCountingServiceBGS_457-3.GetAllDataResponse': result
+        }, pretty=True)
 
         return (operation_day, trip_id, vehicle_id), xml
 
@@ -249,8 +251,7 @@ class DefaultAdapter(BaseAdapter):
                 f"{formatted_date}_O{operation_day}_T{trip_id}_{vehicle_id}.xml"
             )
 
-            with open(output_filename, 'wb') as output_file:
-                output_file.write(b'<?xml version="1.0" encoding="UTF-8" ?>\n')
+            with open(output_filename, 'w') as output_file:
                 output_file.write(x)
 
     def _update_unmatched_pces(self, trip: Trip, passenger_counting_events: List[PassengerCountingEvent]) -> List[PassengerCountingEvent]:
