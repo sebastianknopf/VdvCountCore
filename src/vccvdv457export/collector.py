@@ -67,7 +67,7 @@ class PassengerCountingEventCollector:
                 pce.device_id = device_id
 
                 # generate first CountingSequence
-                cs: CountingSequence = self._extract_counting_sequence(row)
+                cs: CountingSequence = self._extract_counting_sequence(row, device_id)                
                 pce.counting_sequences.append(cs)
 
                 # generate stop information
@@ -83,7 +83,7 @@ class PassengerCountingEventCollector:
 
         return results
 
-    def _extract_counting_sequence(self, row: dict) -> CountingSequence:
+    def _extract_counting_sequence(self, row: dict, device_id: str) -> CountingSequence:
         cs: CountingSequence = CountingSequence()
         cs.door_id = row['door_id']
         cs.counting_area_id = row['counting_area_id']
@@ -92,6 +92,7 @@ class PassengerCountingEventCollector:
         cs.end_timestamp = datetime.fromtimestamp(row['end_timestamp'], timezone.utc)
         cs.count_in = row['in']
         cs.count_out = row['out']
+        cs.device_id = device_id
 
         return cs
     

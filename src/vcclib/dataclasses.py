@@ -57,6 +57,7 @@ class CountingSequence:
     end_timestamp: datetime
     count_in: int = 0
     count_out: int = 0
+    device_id: str|None = None
 
     def __init__(self) -> None:
         pass
@@ -79,9 +80,8 @@ class PassengerCountingEvent:
             # instead throw an exception if the door ID already exists
             existing_cs: CountingSequence = next((cs for cs in self.counting_sequences if cs.counting_area_id == counting_sequence.counting_area_id and cs.door_id == counting_sequence.door_id and cs.object_class == counting_sequence.object_class), None)
             if existing_cs is not None:
-                if fail_on_existing_door_id and counting_sequence.door_id != '0':
-                    pass
-                    #raise ValueError(f"CountingSequence with DoorID {counting_sequence.door_id} already exists for CountingAreaID {counting_sequence.counting_area_id} and ObjectClass {counting_sequence.object_class} at StopID {self.stop.id} and StopSequence {self.stop.sequence}.")
+                if fail_on_existing_door_id and counting_sequence.door_id != '0' and self.device_id != pce.device_id:
+                    raise ValueError(f"CountingSequence with DoorID {counting_sequence.door_id} already exists for CountingAreaID {counting_sequence.counting_area_id} and ObjectClass {counting_sequence.object_class} at StopID {self.stop.id} and StopSequence {self.stop.sequence}, recorded by DeviceID {self.device_id} and DeviceID {pce.device_id}")
             
                 existing_cs.count_in += counting_sequence.count_in
                 existing_cs.count_out += counting_sequence.count_out
