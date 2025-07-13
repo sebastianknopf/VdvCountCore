@@ -49,11 +49,11 @@ class PassengerCountingEventCollector:
         for row in data:
             if row['stop_id'] is not None and pce is not None and pce.stop is not None and pce.stop.id == row['stop_id']:
                 # generate CountingSequence and add it to existing PCE
-                cs: CountingSequence = self._extract_counting_sequence(row)
+                cs: CountingSequence = self._extract_counting_sequence(row, device_id)
                 pce.counting_sequences.append(cs)
             elif row['begin_timestamp'] is not None and pce is not None and int(pce.begin_timestamp().timestamp()) == row['begin_timestamp']:
                 # generate CountingSequence and add it to existing PCE
-                cs: CountingSequence = self._extract_counting_sequence(row)
+                cs: CountingSequence = self._extract_counting_sequence(row, device_id)
                 pce.counting_sequences.append(cs)
             else:
                 # store current PCE instance
