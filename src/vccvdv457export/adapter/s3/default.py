@@ -285,7 +285,7 @@ class DefaultAdapter(BaseAdapter):
                 # then map all remaining PCEs together to one
                 primary_pce: PassengerCountingEvent = matching_pces[0]
                 for i in range(1, len(matching_pces)):
-                    primary_pce.combine(matching_pces[i])
+                    primary_pce.combine(matching_pces[i], False)
 
                 matched_passenger_counting_events.append(primary_pce)       
         

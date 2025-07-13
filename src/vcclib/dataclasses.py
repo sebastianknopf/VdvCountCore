@@ -72,14 +72,27 @@ class PassengerCountingEvent:
     def __init__(self) -> None:
         self.counting_sequences = list()
 
-    def combine(self, pce: 'PassengerCountingEvent') -> None:
+    def combine(self, pce: 'PassengerCountingEvent', fail_on_existing_door_id:bool = True) -> None:
         for counting_sequence in pce.counting_sequences:
+            # see #48/49, don't respect the door ID in first instance
+            # instead throw an exception if the door ID already exists
             existing_cs: CountingSequence = next((cs for cs in self.counting_sequences if cs.counting_area_id == counting_sequence.counting_area_id and cs.door_id == counting_sequence.door_id and cs.object_class == counting_sequence.object_class), None)
             if existing_cs is not None:
+                if fail_on_existing_door_id and counting_sequence.door_id != '0':
+                    pass
+                    #raise ValueError(f"CountingSequence with DoorID {counting_sequence.door_id} already exists for CountingAreaID {counting_sequence.counting_area_id} and ObjectClass {counting_sequence.object_class} at StopID {self.stop.id} and StopSequence {self.stop.sequence}.")
+            
                 existing_cs.count_in += counting_sequence.count_in
                 existing_cs.count_out += counting_sequence.count_out
             else:
                 self.counting_sequences.append(counting_sequence)
+
+        # see #48/#49, check if there're CS with door ID 0 and also other door IDs
+        # if so, remove the CS with door ID 0
+        num_cs_door_0: int = len([cs for cs in self.counting_sequences if cs.door_id == '0'])
+        num_cs_door_x: int = len([cs for cs in self.counting_sequences if cs.door_id != '0'])
+        if num_cs_door_0 > 0 and num_cs_door_x > 0:
+            self.counting_sequences = [cs for cs in self.counting_sequences if cs.door_id != '0']
 
     def intersects(self, pce: 'PassengerCountingEvent', consider_position: bool = True, consider_time: bool = True) -> bool:
         # check if stop ID and sequence or after_stop_sequence are the same
