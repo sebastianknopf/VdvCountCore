@@ -97,7 +97,7 @@ class PassengerCountingEvent:
         time_intersection: bool = False
 
         if consider_time:
-            if self.begin_timestamp() <= pce.begin_timestamp() <= self.end_timestamp():
+            if self.begin_timestamp() <= pce.end_timestamp() and pce.begin_timestamp() <= self.end_timestamp():
                 time_intersection = True
         else:
             time_intersection = True
