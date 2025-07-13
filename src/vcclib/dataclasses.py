@@ -68,6 +68,7 @@ class PassengerCountingEvent:
     after_stop_sequence: int = -1
     stop: Stop|None = None
     counting_sequences: List[CountingSequence] = field(default_factory=list)
+    device_id: str|None = None
 
     def __init__(self) -> None:
         self.counting_sequences = list()
