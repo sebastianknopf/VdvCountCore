@@ -96,7 +96,7 @@ class PassengerCountingEvent:
         # check if time of PCEs are intersecting
         time_intersection: bool = False
 
-        if consider_time:
+        if consider_time and not (self.is_run_through() and pce.is_run_through()):
             if self.begin_timestamp() <= pce.end_timestamp() and pce.begin_timestamp() <= self.end_timestamp():
                 time_intersection = True
         else:
