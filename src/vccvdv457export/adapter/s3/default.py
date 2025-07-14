@@ -141,6 +141,7 @@ class DefaultAdapter(BaseAdapter):
             }
         }
 
+        run_through_door_id: str = os.getenv('VCC_VDV457_EXPORT_RUN_THROUGH_DOOR_ID', '0')
         for i, pce in enumerate(passenger_counting_events):
 
             pce_xml = {
@@ -184,7 +185,7 @@ class DefaultAdapter(BaseAdapter):
                 for door_id in door_ids:
                     counting_xml: dict = {
                         'DoorID': {
-                            'Value': door_id
+                            'Value': door_id if not pce.is_run_through() else run_through_door_id
                         },
                         'DoorState': {
                             'OpenState': {
