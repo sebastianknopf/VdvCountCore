@@ -57,6 +57,7 @@ class CountingSequence:
     end_timestamp: datetime
     count_in: int = 0
     count_out: int = 0
+    device_id: str|None = None
 
     def __init__(self) -> None:
         pass
@@ -68,18 +69,32 @@ class PassengerCountingEvent:
     after_stop_sequence: int = -1
     stop: Stop|None = None
     counting_sequences: List[CountingSequence] = field(default_factory=list)
+    device_id: str|None = None
 
     def __init__(self) -> None:
         self.counting_sequences = list()
 
-    def combine(self, pce: 'PassengerCountingEvent') -> None:
+    def combine(self, pce: 'PassengerCountingEvent', fail_on_existing_door_id_of_different_device:bool = True) -> None:
         for counting_sequence in pce.counting_sequences:
-            existing_cs: CountingSequence = next((cs for cs in self.counting_sequences if cs.counting_area_id == counting_sequence.counting_area_id and cs.door_id == counting_sequence.door_id and cs.object_class == counting_sequence.object_class), None)
-            if existing_cs is not None:
-                existing_cs.count_in += counting_sequence.count_in
-                existing_cs.count_out += counting_sequence.count_out
+            # see #48/49: check whether the same door ID has been delivered by a different device yet
+            # if so, throw an exception if fail_on_existing_door_id is True
+            existing_counting_seqeunce: CountingSequence = next((cs for cs in self.counting_sequences if cs.counting_area_id == counting_sequence.counting_area_id and cs.door_id == counting_sequence.door_id and cs.object_class == counting_sequence.object_class), None)
+            if existing_counting_seqeunce is not None:
+                #"""fail_on_existing_door_id_of_different_device and"""
+                if counting_sequence.door_id != '0' and existing_counting_seqeunce.device_id != counting_sequence.device_id:
+                    raise ValueError(f"CountingSequence with DoorID {counting_sequence.door_id} already exists for CountingAreaID {counting_sequence.counting_area_id} and ObjectClass {counting_sequence.object_class} at StopID {self.stop.id} and StopSequence {self.stop.sequence}, recorded by DeviceID {self.device_id} and DeviceID {pce.device_id}")
+            
+                existing_counting_seqeunce.count_in += counting_sequence.count_in
+                existing_counting_seqeunce.count_out += counting_sequence.count_out
             else:
                 self.counting_sequences.append(counting_sequence)
+
+        # see #48/#49, check if there're CS with door ID 0 and also other door IDs
+        # if so, remove the CS with door ID 0
+        num_cs_door_0: int = len([cs for cs in self.counting_sequences if cs.door_id == '0'])
+        num_cs_door_x: int = len([cs for cs in self.counting_sequences if cs.door_id != '0'])
+        if num_cs_door_0 > 0 and num_cs_door_x > 0:
+            self.counting_sequences = [cs for cs in self.counting_sequences if cs.door_id != '0']
 
     def intersects(self, pce: 'PassengerCountingEvent', consider_position: bool = True, consider_time: bool = True) -> bool:
         # check if stop ID and sequence or after_stop_sequence are the same
@@ -96,8 +111,8 @@ class PassengerCountingEvent:
         # check if time of PCEs are intersecting
         time_intersection: bool = False
 
-        if consider_time:
-            if self.begin_timestamp() <= pce.begin_timestamp() <= self.end_timestamp():
+        if consider_time and not (self.is_run_through() and pce.is_run_through()):
+            if self.begin_timestamp() <= pce.end_timestamp() and pce.begin_timestamp() <= self.end_timestamp():
                 time_intersection = True
         else:
             time_intersection = True

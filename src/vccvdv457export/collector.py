@@ -10,14 +10,14 @@ from vcclib.dataclasses import PassengerCountingEvent
 
 class PassengerCountingEventCollector:
 
-    def __init__(self, primary_data: List[tuple]) -> None:
-        passenger_counting_events = self._extract_passenger_counting_events(primary_data)
+    def __init__(self, primary_data: List[tuple], device_id: str) -> None:
+        passenger_counting_events = self._extract_passenger_counting_events(primary_data, device_id)
 
         logging.info(f"Initializing {self.__class__.__name__} with {len(passenger_counting_events)} PCEs")
         self._passenger_counting_events = passenger_counting_events
 
-    def add(self, secondary_data: List[tuple], consider_time: bool = True) -> None:
-        passenger_counting_events = self._extract_passenger_counting_events(secondary_data)
+    def add(self, secondary_data: List[tuple], device_id: str, consider_time: bool = True) -> None:
+        passenger_counting_events = self._extract_passenger_counting_events(secondary_data, device_id)
 
         logging.info(f"Combining {len(passenger_counting_events)} secondary PCEs with {len(self._passenger_counting_events)} existing PCEs")
         self._combine_passenger_counting_events(passenger_counting_events, consider_time)
@@ -42,18 +42,18 @@ class PassengerCountingEventCollector:
     def get_passenger_counting_events(self) -> List[PassengerCountingEvent]:
         return sorted(self._passenger_counting_events, key=lambda p: p.end_timestamp())
     
-    def _extract_passenger_counting_events(self, data: List[tuple]) -> List[PassengerCountingEvent]:
+    def _extract_passenger_counting_events(self, data: List[tuple], device_id: str) -> List[PassengerCountingEvent]:
         results: List[PassengerCountingEvent] = list()
 
         pce: PassengerCountingEvent|None = None
         for row in data:
             if row['stop_id'] is not None and pce is not None and pce.stop is not None and pce.stop.id == row['stop_id']:
                 # generate CountingSequence and add it to existing PCE
-                cs: CountingSequence = self._extract_counting_sequence(row)
+                cs: CountingSequence = self._extract_counting_sequence(row, device_id)
                 pce.counting_sequences.append(cs)
             elif row['begin_timestamp'] is not None and pce is not None and int(pce.begin_timestamp().timestamp()) == row['begin_timestamp']:
                 # generate CountingSequence and add it to existing PCE
-                cs: CountingSequence = self._extract_counting_sequence(row)
+                cs: CountingSequence = self._extract_counting_sequence(row, device_id)
                 pce.counting_sequences.append(cs)
             else:
                 # store current PCE instance
@@ -64,9 +64,10 @@ class PassengerCountingEventCollector:
                 pce = PassengerCountingEvent()
                 pce.latitude = row['pce_latitude']
                 pce.longitude = row['pce_longitude']
+                pce.device_id = device_id
 
                 # generate first CountingSequence
-                cs: CountingSequence = self._extract_counting_sequence(row)
+                cs: CountingSequence = self._extract_counting_sequence(row, device_id)                
                 pce.counting_sequences.append(cs)
 
                 # generate stop information
@@ -82,7 +83,7 @@ class PassengerCountingEventCollector:
 
         return results
 
-    def _extract_counting_sequence(self, row: dict) -> CountingSequence:
+    def _extract_counting_sequence(self, row: dict, device_id: str) -> CountingSequence:
         cs: CountingSequence = CountingSequence()
         cs.door_id = row['door_id']
         cs.counting_area_id = row['counting_area_id']
@@ -91,6 +92,7 @@ class PassengerCountingEventCollector:
         cs.end_timestamp = datetime.fromtimestamp(row['end_timestamp'], timezone.utc)
         cs.count_in = row['in']
         cs.count_out = row['out']
+        cs.device_id = device_id
 
         return cs
     

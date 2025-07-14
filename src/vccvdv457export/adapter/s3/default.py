@@ -56,7 +56,7 @@ class DefaultAdapter(BaseAdapter):
 
             # select primary data and create collector instance
             primary_data = ddb.get_data(operation_day, trip_id, vehicle_id, primary_device_id)
-            collector: PassengerCountingEventCollector = PassengerCountingEventCollector(primary_data)
+            collector: PassengerCountingEventCollector = PassengerCountingEventCollector(primary_data, primary_device_id)
             
             # select device IDs for secondary data
             for secondary_device_id in ddb.get_secondary_device_ids(operation_day, trip_id, vehicle_id, primary_device_id):
@@ -65,7 +65,7 @@ class DefaultAdapter(BaseAdapter):
 
                 # select secondary data 
                 secondary_data = ddb.get_data(operation_day, trip_id, vehicle_id, secondary_device_id)
-                collector.add(secondary_data, False)
+                collector.add(secondary_data, secondary_device_id, False)
 
             # call verify method to log every possible invalid dataset
             collector.verify()
@@ -285,7 +285,7 @@ class DefaultAdapter(BaseAdapter):
                 # then map all remaining PCEs together to one
                 primary_pce: PassengerCountingEvent = matching_pces[0]
                 for i in range(1, len(matching_pces)):
-                    primary_pce.combine(matching_pces[i])
+                    primary_pce.combine(matching_pces[i], False)
 
                 matched_passenger_counting_events.append(primary_pce)       
         
