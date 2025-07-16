@@ -1,7 +1,6 @@
 services:
   vcc-database:
     image: mysql:latest
-    container_name: vcc-database
     restart: unless-stopped
     networks:
       - vcc
@@ -18,7 +17,6 @@ services:
       timeout: 5s
   vcc-proxy:
     image: httpd:2.4
-    container_name: vcc-proxy
     restart: unless-stopped
     networks:
       - vcc
@@ -43,7 +41,6 @@ services:
     build:
       context: .
       dockerfile: ./src/vccvdv452import/Dockerfile
-    container_name: vcc-vdv452-import
     restart: unless-stopped
     networks:
       - vcc
@@ -60,7 +57,6 @@ services:
     build:
       context: .
       dockerfile: ./src/vccmdimport/Dockerfile
-    container_name: vcc-md-import
     restart: unless-stopped
     networks:
       - vcc
@@ -77,7 +73,6 @@ services:
     build:
       context: .
       dockerfile: ./src/vccapi/Dockerfile
-    container_name: vcc-api
     restart: unless-stopped
     networks:
       - vcc
@@ -103,7 +98,6 @@ services:
     build:
       context: .
       dockerfile: ./src/vccvdv457export/Dockerfile
-    container_name: vcc-vdv457-export
     restart: unless-stopped
     networks:
       - vcc
