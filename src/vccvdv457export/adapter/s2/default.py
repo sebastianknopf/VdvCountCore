@@ -1,7 +1,6 @@
 import logging
 import os
 
-from datetime import datetime
 from typing import Dict
 from typing import List
 from typing import Set
@@ -21,8 +20,8 @@ from vccvdv457export.extender import PassengerCountingEventExtender
 
 class DefaultAdapter(BaseAdapter):
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, create_reports: bool = False) -> None:
+        super().__init__(create_reports)
 
     def process(self, ddb: DuckDB, output_directory: str) -> None:
         super().process(ddb, output_directory)
@@ -34,7 +33,7 @@ class DefaultAdapter(BaseAdapter):
         # transform each operation_day/trip_id combination into final data structure
         logging.info(f"Transforming data of {len(extracted_data.keys())} trips ...")
         
-        transformed_data: Dict[tuple, str] = dict()
+        transformed_data: Dict[tuple, tuple] = dict()
         for (operation_day, trip_id, vehicle_id), passenger_counting_events in extracted_data.items():
             key, value = self._transform(ddb, operation_day, trip_id, vehicle_id, passenger_counting_events)
             transformed_data[key] = value
@@ -283,22 +282,3 @@ class DefaultAdapter(BaseAdapter):
         }, pretty=True)
 
         return (operation_day, trip_id, vehicle_id), xml
-    
-    def _export(self, transformed_data: Dict[tuple, str], output_directory: str) -> None:   
-        
-        # write each dataset to a single file
-        for k, x in transformed_data.items():
-
-            formatted_date: str = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-
-            operation_day: int = k[0]
-            trip_id: int = k[1]
-            vehicle_id: str = k[2]
-
-            output_filename: str = os.path.join(
-                output_directory, 
-                f"{formatted_date}_O{operation_day}_T{trip_id}_{vehicle_id}.xml"
-            )
-
-            with open(output_filename, 'w') as output_file:
-                output_file.write(x)

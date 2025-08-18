@@ -2,15 +2,12 @@ import logging
 import os
 
 from datetime import datetime
-from datetime import timezone
-from itertools import chain
 from typing import Dict
 from typing import List
 from typing import Set
 from typing import Tuple
 from xmltodict import unparse
 
-from vcclib.common import isoformattime
 from vcclib.dataclasses import PassengerCountingEvent
 from vcclib.dataclasses import CountingSequence
 from vcclib.dataclasses import Trip
@@ -23,8 +20,8 @@ from vccvdv457export.extender import PassengerCountingEventExtender
 
 class DefaultAdapter(BaseAdapter):
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, create_reports: bool = False) -> None:
+        super().__init__(create_reports)
 
     def process(self, ddb: DuckDB, output_directory: str) -> None:
         super().process(ddb, output_directory)
@@ -224,36 +221,11 @@ class DefaultAdapter(BaseAdapter):
             result['PassengerCountingServiceJourney']['PassengerCountingMessage']['PassengerCountingEvent'].append(pce_xml)
 
         # return an XML result
-        attribute_mapping: dict = {
-            'HeaderCounting': [
-                'QueryType'
-            ]
-        }
-
         xml = unparse({
             'PassengerCountingServiceBGS_457-3.GetAllDataResponse': result
         }, pretty=True)
 
         return (operation_day, trip_id, vehicle_id), xml
-
-    def _export(self, transformed_data: Dict[tuple, str], output_directory: str) -> None:   
-        
-        # write each dataset to a single file
-        for k, x in transformed_data.items():
-
-            formatted_date: str = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-
-            operation_day: int = k[0]
-            trip_id: int = k[1]
-            vehicle_id: str = k[2]
-
-            output_filename: str = os.path.join(
-                output_directory, 
-                f"{formatted_date}_O{operation_day}_T{trip_id}_{vehicle_id}.xml"
-            )
-
-            with open(output_filename, 'w') as output_file:
-                output_file.write(x)
 
     def _update_unmatched_pces(self, trip: Trip, passenger_counting_events: List[PassengerCountingEvent]) -> List[PassengerCountingEvent]:
 

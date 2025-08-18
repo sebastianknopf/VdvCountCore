@@ -57,7 +57,9 @@ def _run_now():
 
             adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_2', 'default')
             if adapter_type == 'default':
-                adapter = s2.DefaultAdapter()
+                adapter = s2.DefaultAdapter(
+                    is_set('VCC_VDV457_EXPORT_REPORT_2')
+                )
             else:
                 raise ValueError(f"Unknown VDV457-2 adapter type {adapter_type}!")
             
@@ -77,7 +79,9 @@ def _run_now():
 
             adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_3', 'default')
             if adapter_type == 'default':
-                adapter = s3.DefaultAdapter()
+                adapter = s3.DefaultAdapter(
+                    is_set('VCC_VDV457_EXPORT_REPORT_3')
+                )
             else:
                 raise ValueError(f"Unknown VDV457-3 adapter type {adapter_type}!")
 

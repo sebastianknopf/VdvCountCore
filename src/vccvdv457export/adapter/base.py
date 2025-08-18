@@ -1,5 +1,9 @@
+import csv
+import os
+
 from abc import ABC
 from abc import abstractmethod
+from typing import Dict
 
 from datetime import datetime
 from datetime import timezone
@@ -12,8 +16,9 @@ from vcclib.duckdb import DuckDB
 
 class BaseAdapter(ABC):
 
-    def __init__(self):
-        self._ddb = DuckDB()
+    def __init__(self, create_reports: bool = False):
+        self._reports = list()
+        self._create_reports: bool = create_reports
 
     @abstractmethod
     def process(self, ddb: DuckDB, output_directory: str) -> None:
@@ -56,3 +61,57 @@ class BaseAdapter(ABC):
             trip.stop_times.append(stop_time)
 
         return trip
+
+    def _report(self, trip_id: str, operation_day: str, log_level: str, log_message: str ) -> None:
+        self._reports.append({
+            'archive_name': None,
+            'trip_id': trip_id,
+            'operation_day': operation_day,
+            'log_level': log_level,
+            'log_message': log_message,
+            'comment': None
+        })
+    
+    def _export(self, transformed_data: Dict[tuple, str], output_directory: str) -> None:   
+        
+        # write each dataset to a single file
+        for k, x in transformed_data.items():
+
+            formatted_date: str = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+
+            operation_day: int = k[0]
+            trip_id: int = k[1]
+            vehicle_id: str = k[2]
+
+            # generate XML output file
+            output_filename: str = os.path.join(
+                output_directory, 
+                f"{formatted_date}_O{operation_day}_T{trip_id}_{vehicle_id}.xml"
+            )
+
+            with open(output_filename, 'w') as output_file:
+                output_file.write(x)
+
+            # generate report output file
+            if self._create_reports:
+                report_filename: str = os.path.join(
+                    output_directory, 
+                    f"{formatted_date}_O{operation_day}_T{trip_id}_{vehicle_id}_Report.txt"
+                )
+
+                with open(report_filename, 'w') as report_file:
+                    csv_writer = csv.DictWriter(
+                        report_file, 
+                        delimiter=';', 
+                        quotechar='"', 
+                        fieldnames=[
+                            'archive_name', 
+                            'trip_id', 
+                            'operation_day', 
+                            'log_level', 
+                            'log_message', 
+                            'comment'
+                        ])
+                    
+                    csv_writer.writeheader()
+                    csv_writer.writerows(self._reports)
