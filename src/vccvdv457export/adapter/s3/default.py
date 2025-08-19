@@ -20,11 +20,11 @@ from vccvdv457export.extender import PassengerCountingEventExtender
 
 class DefaultAdapter(BaseAdapter):
 
-    def __init__(self, create_reports: bool = False) -> None:
-        super().__init__(create_reports)
+    def __init__(self, reports_archive_name: str = '', reports_create: bool = False) -> None:
+        super().__init__(reports_archive_name, reports_create)
 
-    def process(self, ddb: DuckDB, output_directory: str) -> None:
-        super().process(ddb, output_directory)
+    def process(self, ddb: DuckDB, output_directory: str, dubious_output_directory: str) -> None:
+        super().process(ddb, output_directory, dubious_output_directory)
 
         # extract PCE from loaded data
         logging.info("Extracting PCE data from local DDB ...")
@@ -40,7 +40,7 @@ class DefaultAdapter(BaseAdapter):
 
         # export data finally
         logging.info(f"Exporting {len(transformed_data)} trips ...")
-        self._export(transformed_data, output_directory)
+        self._export(transformed_data, output_directory, dubious_output_directory)
 
     def _extract(self, ddb: DuckDB) -> Dict[tuple, List[PassengerCountingEvent]]:
         

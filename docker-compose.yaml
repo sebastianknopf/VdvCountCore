@@ -114,9 +114,9 @@ services:
     volumes:
       - ./src/resources:/etc/resources
       - ${VCC_VDV457_EXPORT_DATA_DIRECORY}:/data/input
-      - ${VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2}:/data/vdv4572
+      - ${VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2}:/data/vdv4572/success
       - ${VCC_VDV457_EXPORT_OUTPUT_DUBIOUS_DIRECTORY_2}:/data/vdv4572/dubious
-      - ${VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_3}:/data/vdv4573
+      - ${VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_3}:/data/vdv4573/success
       - ${VCC_VDV457_EXPORT_OUTPUT_DUBIOUS_DIRECTORY_3}:/data/vdv4573/dubious
     depends_on:
       "vcc-database":

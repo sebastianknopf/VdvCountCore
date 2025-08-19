@@ -16,12 +16,13 @@ from vcclib.duckdb import DuckDB
 
 class BaseAdapter(ABC):
 
-    def __init__(self, create_reports: bool = False):
-        self._reports = list()
-        self._create_reports: bool = create_reports
+    def __init__(self, reports_archive_name:str = None, reports_create: bool = False):
+        self._reports:list = list()
+        self._reports_archive_name: str = reports_archive_name
+        self._reports_create: bool = reports_create
 
     @abstractmethod
-    def process(self, ddb: DuckDB, output_directory: str) -> None:
+    def process(self, ddb: DuckDB, output_directory: str, dubious_output_directory:str) -> None:
         pass
 
     def load_trip_details(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str) -> Trip:
@@ -62,17 +63,19 @@ class BaseAdapter(ABC):
 
         return trip
 
-    def _report(self, trip_id: str, operation_day: str, log_level: str, log_message: str ) -> None:
+    def _report(self, trip_id: str, operation_day: int, vehicle_id: str, log_code: str, log_level: str, log_message: str ) -> None:
         self._reports.append({
-            'archive_name': None,
+            'archive_name': self._reports_archive_name,
             'trip_id': trip_id,
             'operation_day': operation_day,
+            'vehicle_id': vehicle_id,
+            'log_code': log_code,
             'log_level': log_level,
             'log_message': log_message,
             'comment': None
         })
     
-    def _export(self, transformed_data: Dict[tuple, str], output_directory: str) -> None:   
+    def _export(self, transformed_data: Dict[tuple, str], output_directory: str, dubious_output_directory: str) -> None:   
         
         # write each dataset to a single file
         for k, x in transformed_data.items():
@@ -82,6 +85,13 @@ class BaseAdapter(ABC):
             operation_day: int = k[0]
             trip_id: int = k[1]
             vehicle_id: str = k[2]
+
+            # extract reports for this unique combination
+            matching_reports: list = [r for r in self._reports if r['trip_id'] == trip_id and r['operation_day'] == operation_day and r['vehicle_id'] == vehicle_id]
+
+            # map to dubious output file if we have any logs with level ERROR
+            if any([True for r in matching_reports if r['log_level'].lower() == 'error']):
+                output_directory = dubious_output_directory
 
             # generate XML output file
             output_filename: str = os.path.join(
@@ -93,7 +103,7 @@ class BaseAdapter(ABC):
                 output_file.write(x)
 
             # generate report output file
-            if self._create_reports:
+            if self._reports_create:
                 report_filename: str = os.path.join(
                     output_directory, 
                     f"{formatted_date}_O{operation_day}_T{trip_id}_{vehicle_id}_Report.txt"
@@ -108,10 +118,14 @@ class BaseAdapter(ABC):
                             'archive_name', 
                             'trip_id', 
                             'operation_day', 
+                            'vehicle_id',
+                            'log_code',
                             'log_level', 
                             'log_message', 
                             'comment'
                         ])
                     
                     csv_writer.writeheader()
-                    csv_writer.writerows(self._reports)
+                    csv_writer.writerows(
+                        [r for r in self._reports if r['trip_id'] == trip_id and r['operation_day'] == operation_day and r['vehicle_id'] == vehicle_id]
+                    )
