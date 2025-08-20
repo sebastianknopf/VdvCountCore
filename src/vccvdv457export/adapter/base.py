@@ -41,6 +41,8 @@ class BaseAdapter(ABC):
 
         trip: Trip = Trip()
         trip.id = trip_details_data[0]['trip_id']
+        trip.vehicle_id = trip_details_data[0]['vehicle_id']
+        trip.vehicle_num_doors = trip_details_data[0]['vehicle_num_doors']
         trip.international_id = trip_details_data[0]['trip_international_id']
         trip.direction = trip_details_data[0]['direction']
         trip.line = line
