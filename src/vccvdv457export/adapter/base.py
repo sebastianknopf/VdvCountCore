@@ -8,11 +8,13 @@ from typing import Dict
 from datetime import datetime
 from datetime import timezone
 
+from vcclib.dataclasses import PassengerCountingEvent
 from vcclib.dataclasses import Trip
 from vcclib.dataclasses import Line
 from vcclib.dataclasses import StopTime
 from vcclib.dataclasses import Stop
 from vcclib.duckdb import DuckDB
+from vcclib.geo import haversine_distance
 
 class BaseAdapter(ABC):
 
@@ -63,11 +65,70 @@ class BaseAdapter(ABC):
 
         return trip
 
-    def _report(self, trip_id: str, operation_day: int, vehicle_id: str, log_code: str, log_level: str, log_message: str ) -> None:
+    def generate_verification_reports(self, operation_day: int, trip_id: int, vehicle_id: str, passenger_counting_events: list[PassengerCountingEvent], trip: Trip) -> None:
+        
+        # check whether first and last stop have been counted and create an warning if not
+        # check if first and last stop PCE's position matches nominal stop positions
+        highest_stop_index: int = trip.stop_times[-1].stop.sequence
+
+        first_stop_pce: PassengerCountingEvent|None = next((pce for pce in passenger_counting_events if pce.stop.sequence == 1), None)
+        if first_stop_pce is None:
+            self._report(
+                operation_day,
+                trip_id,
+                vehicle_id,
+                801,
+                'WARNING',
+                'First stop has not been counted!'
+            )
+        else:
+            distance_in_meters: float = haversine_distance(
+                (first_stop_pce.stop.latitude, first_stop_pce.stop.longitude),
+                (first_stop_pce.latitude, first_stop_pce.longitude)
+            )
+
+            if distance_in_meters > 500:
+                self._report(
+                    operation_day,
+                    trip_id,
+                    vehicle_id,
+                    901,
+                    'ERROR',
+                    'First PCE position does not match the nominal stop position!'
+                )
+
+        last_stop_pce: PassengerCountingEvent|None = next((pce for pce in passenger_counting_events if pce.stop.sequence == highest_stop_index), None)
+        if last_stop_pce is None:
+            self._report(
+                operation_day,
+                trip_id,
+                vehicle_id,
+                802,
+                'WARNING',
+                'Last stop has not been counted!'
+            )
+        else:
+            distance_in_meters: float = haversine_distance(
+                (last_stop_pce.stop.latitude, last_stop_pce.stop.longitude),
+                (last_stop_pce.latitude, last_stop_pce.longitude)
+            )
+
+            if distance_in_meters > 500:
+                self._report(
+                    operation_day,
+                    trip_id,
+                    vehicle_id,
+                    902,
+                    'ERROR',
+                    'Last PCE position does not match the nominal stop position!'
+                )
+
+    
+    def _report(self, operation_day: int, trip_id: int, vehicle_id: str, log_code: str, log_level: str, log_message: str ) -> None:
         self._reports.append({
             'archive_name': self._reports_archive_name,
-            'trip_id': trip_id,
             'operation_day': operation_day,
+            'trip_id': trip_id,
             'vehicle_id': vehicle_id,
             'log_code': log_code,
             'log_level': log_level,
@@ -116,8 +177,8 @@ class BaseAdapter(ABC):
                         quotechar='"', 
                         fieldnames=[
                             'archive_name', 
-                            'trip_id', 
                             'operation_day', 
+                            'trip_id', 
                             'vehicle_id',
                             'log_code',
                             'log_level', 
@@ -125,7 +186,11 @@ class BaseAdapter(ABC):
                             'comment'
                         ])
                     
+                    reports: list = [r for r in self._reports if 
+                        r['operation_day'] == operation_day
+                        and r['trip_id'] == trip_id 
+                        and r['vehicle_id'] == vehicle_id
+                    ]
+
                     csv_writer.writeheader()
-                    csv_writer.writerows(
-                        [r for r in self._reports if r['trip_id'] == trip_id and r['operation_day'] == operation_day and r['vehicle_id'] == vehicle_id]
-                    )
+                    csv_writer.writerows(reports)

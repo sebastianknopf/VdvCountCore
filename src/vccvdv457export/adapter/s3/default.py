@@ -97,6 +97,10 @@ class DefaultAdapter(BaseAdapter):
         # update unmatched PCEs to their corresponding stop
         passenger_counting_events = self._update_unmatched_pces(trip, passenger_counting_events)
 
+        # run basic verifications
+        # run this before extending PCEs and after updating unmatched PCEs
+        self.generate_verification_reports(operation_day, trip_id, vehicle_id, passenger_counting_events, trip)
+
         # extend PCEs to nominal stops
         extender: PassengerCountingEventExtender = PassengerCountingEventExtender(trip)
         passenger_counting_events = extender.extend(passenger_counting_events)

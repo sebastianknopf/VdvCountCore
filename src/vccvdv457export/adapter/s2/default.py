@@ -86,8 +86,12 @@ class DefaultAdapter(BaseAdapter):
 
         line_id = trip.line.id
         line_international_id = trip.line.international_id
-        line_name = trip.line.name
+        line_name = trip.line.name        
 
+        # run basic verifications
+        # run this before extending PCEs
+        self.generate_verification_reports(operation_day, trip_id, vehicle_id, passenger_counting_events, trip)
+        
         # extend PCEs to nominal stops
         extender: PassengerCountingEventExtender = PassengerCountingEventExtender(trip)
         passenger_counting_events = extender.extend(passenger_counting_events)
@@ -117,14 +121,6 @@ class DefaultAdapter(BaseAdapter):
             'PassengerCountingEvent': list()
         }
 
-        self._report(
-            trip_id, 
-            operation_day, 
-            vehicle_id, 
-            '100', 
-            'INFO', 
-            f"Processing {len(passenger_counting_events)} PCEs for trip {trip_id} on operation day {operation_day} with vehicle {vehicle_id}"
-        )
 
         run_through_door_id: str = os.getenv('VCC_VDV457_EXPORT_RUN_THROUGH_DOOR_ID', '0')
         for i, pce in enumerate(passenger_counting_events):
