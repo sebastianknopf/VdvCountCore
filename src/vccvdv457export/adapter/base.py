@@ -125,6 +125,20 @@ class BaseAdapter(ABC):
                     'Last PCE position does not match the nominal stop position!'
                 )
 
+        # check whether each door ID has been counted at least one time in the data
+        expected_door_ids: list[str] = sorted([str(i) for i in range(1, trip.vehicle_num_doors + 1)])
+        counted_door_ids: list[str] = sorted(list({cs.door_id for pce in passenger_counting_events for cs in pce.counting_sequences}))
+
+        if not expected_door_ids == counted_door_ids:
+            self._report(
+                operation_day,
+                trip_id,
+                vehicle_id,
+                903,
+                'ERROR',
+                f"Counted door IDs ({','.join(counted_door_ids)}) does not match the expected door IDs ({','.join(expected_door_ids)})"
+            )
+
     
     def _report(self, operation_day: int, trip_id: int, vehicle_id: str, log_code: str, log_level: str, log_message: str ) -> None:
         self._reports.append({
