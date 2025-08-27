@@ -197,6 +197,9 @@
       "vehicle_id": {
         "type": "string"
       },
+      "vehicle_num_doors": {
+        "type": "integer"
+      },
       "way_points": {
         "type": "array",
         "items": [
@@ -267,6 +270,7 @@
       "unmatched_passenger_counting_events",
       "vca_version",
       "vehicle_id",
+      "vehicle_num_doors",
       "direction",
       "headsign",
       "line",

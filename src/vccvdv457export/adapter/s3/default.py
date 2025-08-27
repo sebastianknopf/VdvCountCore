@@ -2,15 +2,12 @@ import logging
 import os
 
 from datetime import datetime
-from datetime import timezone
-from itertools import chain
 from typing import Dict
 from typing import List
 from typing import Set
 from typing import Tuple
 from xmltodict import unparse
 
-from vcclib.common import isoformattime
 from vcclib.dataclasses import PassengerCountingEvent
 from vcclib.dataclasses import CountingSequence
 from vcclib.dataclasses import Trip
@@ -23,11 +20,11 @@ from vccvdv457export.extender import PassengerCountingEventExtender
 
 class DefaultAdapter(BaseAdapter):
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, reports_archive_name: str = '', reports_create: bool = False) -> None:
+        super().__init__(reports_archive_name, reports_create)
 
-    def process(self, ddb: DuckDB, output_directory: str) -> None:
-        super().process(ddb, output_directory)
+    def process(self, ddb: DuckDB, output_directory: str, dubious_output_directory: str) -> None:
+        super().process(ddb, output_directory, dubious_output_directory)
 
         # extract PCE from loaded data
         logging.info("Extracting PCE data from local DDB ...")
@@ -43,7 +40,7 @@ class DefaultAdapter(BaseAdapter):
 
         # export data finally
         logging.info(f"Exporting {len(transformed_data)} trips ...")
-        self._export(transformed_data, output_directory)
+        self._export(transformed_data, output_directory, dubious_output_directory)
 
     def _extract(self, ddb: DuckDB) -> Dict[tuple, List[PassengerCountingEvent]]:
         
@@ -99,6 +96,10 @@ class DefaultAdapter(BaseAdapter):
 
         # update unmatched PCEs to their corresponding stop
         passenger_counting_events = self._update_unmatched_pces(trip, passenger_counting_events)
+
+        # run basic verifications
+        # run this before extending PCEs and after updating unmatched PCEs
+        self.generate_verification_reports(operation_day, trip_id, vehicle_id, passenger_counting_events, trip)
 
         # extend PCEs to nominal stops
         extender: PassengerCountingEventExtender = PassengerCountingEventExtender(trip)
@@ -224,36 +225,11 @@ class DefaultAdapter(BaseAdapter):
             result['PassengerCountingServiceJourney']['PassengerCountingMessage']['PassengerCountingEvent'].append(pce_xml)
 
         # return an XML result
-        attribute_mapping: dict = {
-            'HeaderCounting': [
-                'QueryType'
-            ]
-        }
-
         xml = unparse({
             'PassengerCountingServiceBGS_457-3.GetAllDataResponse': result
         }, pretty=True)
 
         return (operation_day, trip_id, vehicle_id), xml
-
-    def _export(self, transformed_data: Dict[tuple, str], output_directory: str) -> None:   
-        
-        # write each dataset to a single file
-        for k, x in transformed_data.items():
-
-            formatted_date: str = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-
-            operation_day: int = k[0]
-            trip_id: int = k[1]
-            vehicle_id: str = k[2]
-
-            output_filename: str = os.path.join(
-                output_directory, 
-                f"{formatted_date}_O{operation_day}_T{trip_id}_{vehicle_id}.xml"
-            )
-
-            with open(output_filename, 'w') as output_file:
-                output_file.write(x)
 
     def _update_unmatched_pces(self, trip: Trip, passenger_counting_events: List[PassengerCountingEvent]) -> List[PassengerCountingEvent]:
 

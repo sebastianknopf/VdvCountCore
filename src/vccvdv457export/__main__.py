@@ -43,6 +43,9 @@ def _run_now():
         stage_directory_files(input_directory, stage_directory)
 
     try:
+        # set archive name for this batch
+        archive_name: str = datetime.now().strftime('%Y%m%d%H%M%S')
+
         # initialize DuckDB instance
         ddb = DuckDB(stage_directory, schema_filename)
 
@@ -57,13 +60,20 @@ def _run_now():
 
             adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_2', 'default')
             if adapter_type == 'default':
-                adapter = s2.DefaultAdapter()
+                adapter = s2.DefaultAdapter(
+                    archive_name,
+                    is_set('VCC_VDV457_EXPORT_REPORT_2')
+                )
             else:
                 raise ValueError(f"Unknown VDV457-2 adapter type {adapter_type}!")
             
             try:
                 logging.info(f"Running VDV457-2 converter {adapter_type} ...")
-                adapter.process(ddb, '/data/vdv4572')
+                adapter.process(
+                    ddb, 
+                    '/data/vdv4572/success', 
+                    '/data/vdv4572/dubious'
+                )
             except Exception as ex:
                 any_converter_failed = True
                 if os.getenv('VCC_DEBUG', '0') == '1':
@@ -77,13 +87,20 @@ def _run_now():
 
             adapter_type = os.getenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_3', 'default')
             if adapter_type == 'default':
-                adapter = s3.DefaultAdapter()
+                adapter = s3.DefaultAdapter(
+                    archive_name,
+                    is_set('VCC_VDV457_EXPORT_REPORT_3')
+                )
             else:
                 raise ValueError(f"Unknown VDV457-3 adapter type {adapter_type}!")
 
             try:
                 logging.info(f"Running VDV457-3 converter {adapter_type} ...")
-                adapter.process(ddb, '/data/vdv4573')
+                adapter.process(
+                    ddb, 
+                    '/data/vdv4573/success', 
+                    '/data/vdv4573/dubious'
+                )
             except Exception as ex:
                 any_converter_failed = True
                 if os.getenv('VCC_DEBUG', '0') == '1':
@@ -104,7 +121,12 @@ def _run_now():
     # if all converters ran without error, archive input files; otherwise put them in an error folder
     # archive shall be created in input directory, so pass this as destination variable
     logging.info(f"Archiving files in input directory {stage_directory} ...")
-    archive_directory_files(stage_directory, input_directory, any_converter_failed)
+    archive_directory_files(
+        stage_directory, 
+        input_directory, 
+        archive_name,
+        any_converter_failed
+    )
 
 @click.group()
 def cli():

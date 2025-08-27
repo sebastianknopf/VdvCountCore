@@ -29,9 +29,9 @@ def stage_directory_files(directory: str, stage: str) -> None:
 
                     shutil.move(s, d)
     
-def archive_directory_files(directory: str, desination: str, defective: bool = False) -> None:
+def archive_directory_files(directory: str, desination: str, archive_name:str, defective: bool = False) -> None:
     if directory_contains_files(directory):
-        archive_directory = os.path.join(desination, 'Archive' if not defective else 'Defective', datetime.now().strftime('%Y%m%d%H%M%S'))
+        archive_directory = os.path.join(desination, 'Archive' if not defective else 'Defective', archive_name)
         os.makedirs(archive_directory)
 
         with os.scandir(directory) as entries:

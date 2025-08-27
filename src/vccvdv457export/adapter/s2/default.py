@@ -1,7 +1,6 @@
 import logging
 import os
 
-from datetime import datetime
 from typing import Dict
 from typing import List
 from typing import Set
@@ -21,11 +20,11 @@ from vccvdv457export.extender import PassengerCountingEventExtender
 
 class DefaultAdapter(BaseAdapter):
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, reports_archive_name: str = '', reports_create: bool = False) -> None:
+        super().__init__(reports_archive_name, reports_create)
 
-    def process(self, ddb: DuckDB, output_directory: str) -> None:
-        super().process(ddb, output_directory)
+    def process(self, ddb: DuckDB, output_directory: str, dubious_output_directory:str) -> None:
+        super().process(ddb, output_directory, dubious_output_directory)
 
         # extract PCE from loaded data
         logging.info("Extracting PCE data from local DDB ...")
@@ -34,14 +33,14 @@ class DefaultAdapter(BaseAdapter):
         # transform each operation_day/trip_id combination into final data structure
         logging.info(f"Transforming data of {len(extracted_data.keys())} trips ...")
         
-        transformed_data: Dict[tuple, str] = dict()
+        transformed_data: Dict[tuple, tuple] = dict()
         for (operation_day, trip_id, vehicle_id), passenger_counting_events in extracted_data.items():
             key, value = self._transform(ddb, operation_day, trip_id, vehicle_id, passenger_counting_events)
             transformed_data[key] = value
 
         # export data finally
         logging.info(f"Exporting {len(transformed_data)} trips ...")
-        self._export(transformed_data, output_directory)
+        self._export(transformed_data, output_directory, dubious_output_directory)
 
     def _extract(self, ddb: DuckDB) -> Dict[tuple, List[PassengerCountingEvent]]:
 
@@ -87,8 +86,12 @@ class DefaultAdapter(BaseAdapter):
 
         line_id = trip.line.id
         line_international_id = trip.line.international_id
-        line_name = trip.line.name
+        line_name = trip.line.name        
 
+        # run basic verifications
+        # run this before extending PCEs
+        self.generate_verification_reports(operation_day, trip_id, vehicle_id, passenger_counting_events, trip)
+        
         # extend PCEs to nominal stops
         extender: PassengerCountingEventExtender = PassengerCountingEventExtender(trip)
         passenger_counting_events = extender.extend(passenger_counting_events)
@@ -117,6 +120,7 @@ class DefaultAdapter(BaseAdapter):
             },
             'PassengerCountingEvent': list()
         }
+
 
         run_through_door_id: str = os.getenv('VCC_VDV457_EXPORT_RUN_THROUGH_DOOR_ID', '0')
         for i, pce in enumerate(passenger_counting_events):
@@ -283,22 +287,3 @@ class DefaultAdapter(BaseAdapter):
         }, pretty=True)
 
         return (operation_day, trip_id, vehicle_id), xml
-    
-    def _export(self, transformed_data: Dict[tuple, str], output_directory: str) -> None:   
-        
-        # write each dataset to a single file
-        for k, x in transformed_data.items():
-
-            formatted_date: str = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-
-            operation_day: int = k[0]
-            trip_id: int = k[1]
-            vehicle_id: str = k[2]
-
-            output_filename: str = os.path.join(
-                output_directory, 
-                f"{formatted_date}_O{operation_day}_T{trip_id}_{vehicle_id}.xml"
-            )
-
-            with open(output_filename, 'w') as output_file:
-                output_file.write(x)

@@ -39,7 +39,8 @@ class StopTime:
 @dataclass    
 class Trip:
     id: int
-    vehicle_id: int
+    vehicle_id: str
+    vehicle_num_doors: str
     direction: int
     line: Line
     international_id: str|None = None
