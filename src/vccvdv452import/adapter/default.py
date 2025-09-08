@@ -186,32 +186,35 @@ class DefaultAdapter(BaseAdapter):
                         )
 
                         for s in range(0, len(_intermediate_stops)):
-                            stop_id = _intermediate_stops[s]
-                            arrival_timestamp = _last_timestamp
-                            departure_timestamp = arrival_timestamp
+                            try:
+                                stop_id = _intermediate_stops[s]
+                                arrival_timestamp = _last_timestamp
+                                departure_timestamp = arrival_timestamp
 
-                            if _tdt_id in stop_waiting_time_index and stop_id in stop_waiting_time_index[_tdt_id]:
-                                departure_timestamp = departure_timestamp + stop_waiting_time_index[_tdt_id][stop_id]
+                                if _tdt_id in stop_waiting_time_index and stop_id in stop_waiting_time_index[_tdt_id]:
+                                    departure_timestamp = departure_timestamp + stop_waiting_time_index[_tdt_id][stop_id]
 
-                            if trip_id in trip_waiting_time_index and stop_id in trip_waiting_time_index[trip_id]:
-                                departure_timestamp = departure_timestamp + trip_waiting_time_index[trip_id][stop_id]
+                                if trip_id in trip_waiting_time_index and stop_id in trip_waiting_time_index[trip_id]:
+                                    departure_timestamp = departure_timestamp + trip_waiting_time_index[trip_id][stop_id]
 
-                            if s == len(_intermediate_stops) - 1:
-                                departure_timestamp = None
+                                if s == len(_intermediate_stops) - 1:
+                                    departure_timestamp = None
 
-                            StopTime(
-                                stop=stop_index[stop_id],
-                                trip=trip,
-                                arrival_timestamp=arrival_timestamp,
-                                departure_timestamp=departure_timestamp,
-                                sequence=s + 1,
-                                connection=transaction
-                            )
+                                StopTime(
+                                    stop=stop_index[stop_id],
+                                    trip=trip,
+                                    arrival_timestamp=arrival_timestamp,
+                                    departure_timestamp=departure_timestamp,
+                                    sequence=s + 1,
+                                    connection=transaction
+                                )
 
-                            if s < len(_intermediate_stops) - 1:
-                                next_stop_id = _intermediate_stops[s + 1]
+                                if s < len(_intermediate_stops) - 1:
+                                    next_stop_id = _intermediate_stops[s + 1]
 
-                                _last_timestamp = departure_timestamp + time_demand_type_index[_tdt_id][stop_id][next_stop_id]
+                                    _last_timestamp = departure_timestamp + time_demand_type_index[_tdt_id][stop_id][next_stop_id]
+                            except KeyError as e:
+                                logging.error(f"Stop {stop_id} not found in time demand type index {_tdt_id}")
 
                         trip.headsign = stop_index[_intermediate_stops[-1]].name
 
@@ -236,6 +239,7 @@ class DefaultAdapter(BaseAdapter):
                     logging.exception(ex)
 
             logging.info(f"Found {len(trip_index)} unique trips for operation day {datetime.now().strftime('%Y%m%d')}")
+            logging.info("Import done")
         
         except Exception as ex:
             logging.exception(ex)
