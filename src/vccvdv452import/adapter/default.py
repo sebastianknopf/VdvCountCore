@@ -54,6 +54,10 @@ class DefaultAdapter(BaseAdapter):
             line_data: Tuple[dict, dict] = self._extract_line_data(input_directory, batch_size)
             line_index, line_direction_index = line_data
 
+            # load trip link objects
+            logging.info('Loading additional data ...')
+            trip_link_index: dict = self._extract_trip_links(input_directory, batch_size)
+
             # load timetable information data ...  
             logging.info('Loading timetable information data ...')
 
@@ -182,6 +186,7 @@ class DefaultAdapter(BaseAdapter):
                             direction=direction,
                             international_id=international_id,
                             operation_day=operation_day,
+                            next_trip_id=trip_link_index[trip_id] if trip_id in trip_link_index else None,
                             connection=transaction
                         )
 
@@ -214,7 +219,7 @@ class DefaultAdapter(BaseAdapter):
 
                                     _last_timestamp = departure_timestamp + time_demand_type_index[_tdt_id][stop_id][next_stop_id]
                             except KeyError as ex:
-                                logging.error(f"Stop {stop_id} not found in time demand type index {_tdt_id}")
+                                logging.error(f"Stop {stop_id} not found in time demand type index {_tdt_id}. Stop sequence of this trip may be incomplete.")
                                 logging.exception(ex)
 
                         trip.headsign = stop_index[_intermediate_stops[-1]].name
@@ -349,6 +354,12 @@ class DefaultAdapter(BaseAdapter):
 
         return line_index, line_direction_index
 
+    def _extract_trip_links(self, input_directory: str, batch_size: int) -> dict:
+        # default spec for VDV452 does not have this feature
+        # hence, return an empty dict
+
+        return dict()
+    
     def _verify(self, input_directory:str) -> bool:
         logging.info(f"Verifying files in input directory {input_directory} ...")
 

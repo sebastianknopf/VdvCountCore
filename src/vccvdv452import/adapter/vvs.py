@@ -61,6 +61,20 @@ class VvsAdapter(DefaultAdapter):
 
         return line_index, line_direction_index
 
+    def _extract_trip_links(self, input_directory: str, batch_size: int) -> dict:
+        trip_link_index: dict = dict()
+
+        x10_rec_frt_durchbindung = self._internal_read_x10_file(input_directory, 'rec_frt_durchbindung.x10')
+        for i, record in enumerate(x10_rec_frt_durchbindung.records):
+            trip_id = record['FRT_FID1']
+            next_trip_id = record['FRT_FID2']
+
+            trip_link_index[trip_id] = next_trip_id
+
+        x10_rec_frt_durchbindung.close()
+        
+        return trip_link_index
+
     def _convert_coordinate(self, input: float|str) -> float:
         if type(input) == str:
             input = float(input)
