@@ -61,8 +61,8 @@ class VvsAdapter(DefaultAdapter):
 
         return line_index, line_direction_index
 
-    """def _convert_coordinate(self, input: float|str) -> float:
+    def _convert_coordinate(self, input: float|str) -> float:
         if type(input) == str:
             input = float(input)
-            
-        return input / 10000000.0"""
+
+        return input / 10000000.0
