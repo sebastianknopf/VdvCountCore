@@ -213,8 +213,9 @@ class DefaultAdapter(BaseAdapter):
                                     next_stop_id = _intermediate_stops[s + 1]
 
                                     _last_timestamp = departure_timestamp + time_demand_type_index[_tdt_id][stop_id][next_stop_id]
-                            except KeyError as e:
+                            except KeyError as ex:
                                 logging.error(f"Stop {stop_id} not found in time demand type index {_tdt_id}")
+                                logging.exception(ex)
 
                         trip.headsign = stop_index[_intermediate_stops[-1]].name
 
