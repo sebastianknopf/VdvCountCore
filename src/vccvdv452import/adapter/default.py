@@ -54,6 +54,10 @@ class DefaultAdapter(BaseAdapter):
             line_data: Tuple[dict, dict] = self._extract_line_data(input_directory, batch_size)
             line_index, line_direction_index = line_data
 
+            # load trip link objects
+            logging.info('Loading additional data ...')
+            trip_link_index: dict = self._extract_trip_links(input_directory, batch_size)
+
             # load timetable information data ...  
             logging.info('Loading timetable information data ...')
 
@@ -182,36 +186,41 @@ class DefaultAdapter(BaseAdapter):
                             direction=direction,
                             international_id=international_id,
                             operation_day=operation_day,
+                            next_trip_id=trip_link_index[trip_id] if trip_id in trip_link_index else None,
                             connection=transaction
                         )
 
                         for s in range(0, len(_intermediate_stops)):
-                            stop_id = _intermediate_stops[s]
-                            arrival_timestamp = _last_timestamp
-                            departure_timestamp = arrival_timestamp
+                            try:
+                                stop_id = _intermediate_stops[s]
+                                arrival_timestamp = _last_timestamp
+                                departure_timestamp = arrival_timestamp
 
-                            if _tdt_id in stop_waiting_time_index and stop_id in stop_waiting_time_index[_tdt_id]:
-                                departure_timestamp = departure_timestamp + stop_waiting_time_index[_tdt_id][stop_id]
+                                if _tdt_id in stop_waiting_time_index and stop_id in stop_waiting_time_index[_tdt_id]:
+                                    departure_timestamp = departure_timestamp + stop_waiting_time_index[_tdt_id][stop_id]
 
-                            if trip_id in trip_waiting_time_index and stop_id in trip_waiting_time_index[trip_id]:
-                                departure_timestamp = departure_timestamp + trip_waiting_time_index[trip_id][stop_id]
+                                if trip_id in trip_waiting_time_index and stop_id in trip_waiting_time_index[trip_id]:
+                                    departure_timestamp = departure_timestamp + trip_waiting_time_index[trip_id][stop_id]
 
-                            if s == len(_intermediate_stops) - 1:
-                                departure_timestamp = None
+                                if s == len(_intermediate_stops) - 1:
+                                    departure_timestamp = None
 
-                            StopTime(
-                                stop=stop_index[stop_id],
-                                trip=trip,
-                                arrival_timestamp=arrival_timestamp,
-                                departure_timestamp=departure_timestamp,
-                                sequence=s + 1,
-                                connection=transaction
-                            )
+                                StopTime(
+                                    stop=stop_index[stop_id],
+                                    trip=trip,
+                                    arrival_timestamp=arrival_timestamp,
+                                    departure_timestamp=departure_timestamp,
+                                    sequence=s + 1,
+                                    connection=transaction
+                                )
 
-                            if s < len(_intermediate_stops) - 1:
-                                next_stop_id = _intermediate_stops[s + 1]
+                                if s < len(_intermediate_stops) - 1:
+                                    next_stop_id = _intermediate_stops[s + 1]
 
-                                _last_timestamp = departure_timestamp + time_demand_type_index[_tdt_id][stop_id][next_stop_id]
+                                    _last_timestamp = departure_timestamp + time_demand_type_index[_tdt_id][stop_id][next_stop_id]
+                            except KeyError as ex:
+                                logging.error(f"Stop {next_stop_id} not found in time demand type index {_tdt_id}. Stop sequence of this trip may be incomplete.")
+                                logging.exception(ex)
 
                         trip.headsign = stop_index[_intermediate_stops[-1]].name
 
@@ -236,6 +245,7 @@ class DefaultAdapter(BaseAdapter):
                     logging.exception(ex)
 
             logging.info(f"Found {len(trip_index)} unique trips for operation day {datetime.now().strftime('%Y%m%d')}")
+            logging.info("Import done")
         
         except Exception as ex:
             logging.exception(ex)
@@ -344,6 +354,12 @@ class DefaultAdapter(BaseAdapter):
 
         return line_index, line_direction_index
 
+    def _extract_trip_links(self, input_directory: str, batch_size: int) -> dict:
+        # default spec for VDV452 does not have this feature
+        # hence, return an empty dict
+
+        return dict()
+    
     def _verify(self, input_directory:str) -> bool:
         logging.info(f"Verifying files in input directory {input_directory} ...")
 
