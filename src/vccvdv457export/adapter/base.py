@@ -126,8 +126,19 @@ class BaseAdapter(ABC):
                 )
 
         # check whether each door ID has been counted at least one time in the data
-        expected_door_ids: list[str] = sorted([str(i) for i in range(1, trip.vehicle_num_doors + 1)])
-        counted_door_ids: list[str] = sorted(list({cs.door_id for pce in passenger_counting_events for cs in pce.counting_sequences}))
+        expected_door_ids: list[str] = [str(i) for i in range(1, trip.vehicle_num_doors + 1)]
+        counted_door_ids: list[str] = list({cs.door_id for pce in passenger_counting_events for cs in pce.counting_sequences})
+
+        # raw data may contain a door ID '0' which indicates a run-through PCE
+        # add this to both lists of doors to suppress errors when a door with ID 0 is sent
+        # also sort both lists to have the same order
+        expected_door_ids.append('0')
+        expected_door_ids = sorted(expected_door_ids)
+
+        if '0' not in counted_door_ids:
+            counted_door_ids.append('0')
+        
+        counted_door_ids = sorted(counted_door_ids)
 
         if not expected_door_ids == counted_door_ids:
             self._report(
