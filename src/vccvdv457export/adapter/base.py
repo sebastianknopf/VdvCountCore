@@ -73,7 +73,7 @@ class BaseAdapter(ABC):
         # check if first and last stop PCE's position matches nominal stop positions
         highest_stop_index: int = trip.stop_times[-1].stop.sequence
 
-        first_stop_pce: PassengerCountingEvent|None = next((pce for pce in passenger_counting_events if pce.stop.sequence == 1), None)
+        first_stop_pce: PassengerCountingEvent|None = next((pce for pce in passenger_counting_events if pce.stop.sequence is not None and pce.stop.sequence == 1), None)
         if first_stop_pce is None:
             self._report(
                 operation_day,
