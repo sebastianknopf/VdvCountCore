@@ -97,6 +97,11 @@ class PassengerCountingEvent:
         if num_cs_door_0 > 0 and num_cs_door_x > 0:
             self.counting_sequences = [cs for cs in self.counting_sequences if cs.door_id != '0']
 
+        # see #60, take position of secondary PCE if primary PCE has no position
+        if self.latitude == 0.0 or self.longitude == 0.0:
+            self.latitude = pce.latitude
+            self.longitude = pce.longitude
+
     def intersects(self, pce: 'PassengerCountingEvent', consider_position: bool = True, consider_time: bool = True) -> bool:
         # check if stop ID and sequence or after_stop_sequence are the same
         position_intersection: bool = False
@@ -113,7 +118,7 @@ class PassengerCountingEvent:
         time_intersection: bool = False
 
         if consider_time and not (self.is_run_through() and pce.is_run_through()):
-            if self.begin_timestamp() <= pce.end_timestamp() and pce.begin_timestamp() <= self.end_timestamp():
+            if self.end_timestamp() >= pce.begin_timestamp() and pce.end_timestamp() >= self.begin_timestamp():
                 time_intersection = True
         else:
             time_intersection = True

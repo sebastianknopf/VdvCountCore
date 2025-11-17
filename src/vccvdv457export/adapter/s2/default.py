@@ -121,7 +121,6 @@ class DefaultAdapter(BaseAdapter):
             'PassengerCountingEvent': list()
         }
 
-
         run_through_door_id: str = os.getenv('VCC_VDV457_EXPORT_RUN_THROUGH_DOOR_ID', '0')
         for i, pce in enumerate(passenger_counting_events):
             
