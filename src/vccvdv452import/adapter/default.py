@@ -157,7 +157,7 @@ class DefaultAdapter(BaseAdapter):
             transaction = database.connection().transaction()
             transaction_count = 0
 
-            x10_rec_frt = self._internal_read_x10_file(input_directory, 'rec_frt.x10')
+            x10_rec_frt = self._internal_read_x10_file(input_directory, 'rec_frt.x10', filter={'TAGESART_NR': daytype})
             for i, record in enumerate(x10_rec_frt.records):
                 try:
                     if record['TAGESART_NR'] == daytype:
@@ -387,7 +387,7 @@ class DefaultAdapter(BaseAdapter):
     
         return True
 
-    def _internal_read_x10_file(self, input_directory: str, x10filename: str) -> X10File:
+    def _internal_read_x10_file(self, input_directory: str, x10filename: str, filter: dict|None = None) -> X10File:
         for entry in os.listdir(input_directory):
             if entry.lower() == x10filename.lower():
                 x10filename = entry
@@ -400,7 +400,7 @@ class DefaultAdapter(BaseAdapter):
         
         logging.info(f"Reading {x10filename} ...")
 
-        return read_x10_file(x10filename, encoding='cp1252')
+        return read_x10_file(x10filename, encoding='cp1252', filter=filter)
 
     def _convert_coordinate(self, input: int) -> float:
         input = str(input)
