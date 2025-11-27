@@ -2,41 +2,102 @@ import csv
 import logging
 import re
 
+from typing import Iterable
+
 ########################################################################################################################
 # Helper class for reading and modifying *.x10 files.
 ########################################################################################################################
 
-def read_x10_file(filename, null_value='NULL', encoding='utf-8'):
-    x10_file = X10File()
+def read_x10_file(filename, null_value: str = 'NULL', encoding: str = 'utf-8', filter: dict|None = None) -> "X10File":
+    x10_file = X10File(filename)
     x10_file.null_value = null_value
     x10_file.encoding = encoding
-    x10_file.read(filename)
+    x10_file.read(filter)
     
     return x10_file
-    
-    
-def create_x10_file(filename):
+
+def create_x10_file(filename: str) -> "X10File":
     x10_file = X10File(filename)
     
     return x10_file
 
 class X10File:
 
-    def __init__(self, filename=None):
-        self.null_value = ''
-        self.encoding = 'utf-8'
-        self.strict = False
+    def __init__(self, filename: str|None = None):
+        self.null_value: str = ''
+        self.encoding: str = 'utf-8'
+        self.strict: bool = False
         
-        self._internal_init()
+        self._internal_init(filename)
 
-    def read(self, filename):
-        self._filename = filename
+    def _internal_init(self, filename):
+        self._filename: str = filename
+        
+        self.date_format: str|None = None
+        self.time_format: str|None = None
+        self.representation: str|None = None
+        self.creator_name: str|None = None
+        self.creation_date: str|None = None
+        self.creation_time: str|None = None
+        self.charset: str|None = None
+        self.file_version: str|None = None
+        self.interface_version: str|None = None
+        self.data_version: str|None = None
+        self.file_format: str|None = None
+        self.table_name: str|None = None
+        self.attributes: list[str] = list()
+        self.datatypes: list[str] = list()
+        self.records: list[dict[str, any]] = list()             
+            
+    def _escape_value(self, val: str, dtype: type = str) -> str:
+        
+        if dtype == str:
+            return f" \"{val}\""
+        else:
+            return f" {val}"
+            
+    def _dtype_of_fstr(self, fstr: str, fsize: str|None = None) -> type:
+        
+        if fstr == 'char':
+            return str
+        elif fstr == 'boolean':
+            return bool
+        elif fstr == 'num' and fsize is not None:
+            decimal_places = int(fsize.split('.')[1])
+            if decimal_places > 0:
+                return float
+            else:
+                return int
+        else:
+            return int
+            
+    def _fstr_of_dtype(self, dtype: type) -> str:
+        
+        if dtype == str:
+            return 'char'
+        elif dtype == bool:
+            return 'boolean'
+        else:
+            return 'num'
+        
+    def _create_compare_record(self, record: dict[str, any], primary_key: list[str]) -> dict[str, any]:
     
+        if primary_key is not None:
+            compare_record = dict(record)
+            if primary_key is not None:
+                for k in record:
+                    if k not in primary_key:
+                        del compare_record[k]
+                        
+            return compare_record
+        else:
+            return record
+    
+    def _internal_read(self) -> None:
         with open(self._filename, newline='', encoding=self.encoding) as x10_file:
             x10_reader = csv.reader(x10_file, delimiter=';', quotechar='"')
             for x10_row in x10_reader:
                 if len(x10_row) > 0:
-                
                     if x10_row[0] == 'mod':
                         self.date_format = x10_row[1].strip().strip('"')
                         self.time_format = x10_row[2].strip().strip('"')
@@ -84,6 +145,22 @@ class X10File:
                                 self.datatypes.append({'type': dtype_value[0], 'size': None})
                             
                     elif x10_row[0] == 'rec':
+                        break
+                        
+                    elif x10_row[0] == 'end':
+                        pass
+                            
+                    elif x10_row[0] == 'eof':
+                        pass
+    
+    def stream(self) -> Iterable[dict]:
+        self._internal_read()
+
+        with open(self._filename, newline='', encoding=self.encoding) as x10_file:
+            x10_reader = csv.reader(x10_file, delimiter=';', quotechar='"')
+            for x10_row in x10_reader:
+                if len(x10_row) > 0:
+                    if x10_row[0] == 'rec':
                         record = dict()
                         for i, val in enumerate(x10_row[1:]):
                             val = val.strip().strip('"')
@@ -101,16 +178,18 @@ class X10File:
                             else: # boolean is also handled as string here, since it can contain 0/1 or False/True
                                 record[self.attributes[i]] = val
                                
-                        self.records.append(record)
+                        yield record
+    
+    def read(self, filter: dict|None = None) -> None:    
+        for record in self.stream():
+            if filter is not None:
+                filter_record = self._create_compare_record(record, filter.keys())
+                if filter_record == filter:
+                    self.records.append(record)
+            else:
+                self.records.append(record)
                         
-                    elif x10_row[0] == 'end':
-                        if not len(self.records) == int(x10_row[1]):
-                            logging.error("number of records not matching")
-                            
-                    elif x10_row[0] == 'eof':
-                        pass
-                        
-    def write(self, filename=None):
+    def write(self, filename: str|None = None) -> None:
         if filename == None:
             filename = self._filename
     
@@ -119,32 +198,32 @@ class X10File:
             
             x10_writer.writerow([
                 'mod', 
-                self._create_value(self.date_format, None), 
-                self._create_value(self.time_format, None), 
-                self._create_value(self.representation, None)
+                self._escape_value(self.date_format, None), 
+                self._escape_value(self.time_format, None), 
+                self._escape_value(self.representation, None)
             ])
                   
             x10_writer.writerow([
                 'src', 
-                self._create_value(self.creator_name), 
-                self._create_value(self.creation_date), 
-                self._create_value(self.creation_time)
+                self._escape_value(self.creator_name), 
+                self._escape_value(self.creation_date), 
+                self._escape_value(self.creation_time)
             ])
             
-            x10_writer.writerow(['chs', self._create_value(self.charset)])
-            x10_writer.writerow(['ver', self._create_value(self.file_version)])
-            x10_writer.writerow(['ifv', self._create_value(self.interface_version)])
-            x10_writer.writerow(['dve', self._create_value(self.data_version)])
-            x10_writer.writerow(['fft', self._create_value(self.file_format)])
+            x10_writer.writerow(['chs', self._escape_value(self.charset)])
+            x10_writer.writerow(['ver', self._escape_value(self.file_version)])
+            x10_writer.writerow(['ifv', self._escape_value(self.interface_version)])
+            x10_writer.writerow(['dve', self._escape_value(self.data_version)])
+            x10_writer.writerow(['fft', self._escape_value(self.file_format)])
             
             # write table header
             x10_writer.writerow([])
-            x10_writer.writerow(['tbl', self._create_value(self.table_name, None)])
+            x10_writer.writerow(['tbl', self._escape_value(self.table_name, None)])
             
             # write attributes
             f_attributes = ['atr']
             for attr in self.attributes:
-                f_attributes.append(self._create_value(attr, None))
+                f_attributes.append(self._escape_value(attr, None))
                 
             x10_writer.writerow(f_attributes)
             
@@ -156,10 +235,10 @@ class X10File:
                 
                 if dsize is not None:
                     dtype_value = f"{dtype}[{dsize}]"
-                    f_dtypes.append(self._create_value(dtype_value, None))
+                    f_dtypes.append(self._escape_value(dtype_value, None))
                 else:
                     dtype_value = f"{dtype}"
-                    f_dtypes.append(self._create_value(dtype_value, None))
+                    f_dtypes.append(self._escape_value(dtype_value, None))
                 
             x10_writer.writerow(f_dtypes)
             
@@ -176,19 +255,19 @@ class X10File:
                     fsize = self.datatypes[column_index]['size']
                     dtype = self._dtype_of_fstr(fstr, fsize)
                     
-                    f_record.insert(column_index + 1, self._create_value(record[rkey], dtype))
+                    f_record.insert(column_index + 1, self._escape_value(record[rkey], dtype))
                     
                 f_records.append(f_record)
                 
             x10_writer.writerows(f_records)
             
             # write table end
-            x10_writer.writerow(['end', self._create_value(len(self.records), int)])
+            x10_writer.writerow(['end', self._escape_value(len(self.records), int)])
             
             # write file end
-            x10_writer.writerow(['eof', self._create_value(1, int)])
+            x10_writer.writerow(['eof', self._escape_value(1, int)])
             
-    def add_column(self, cname, dtype, dsize, default=''):
+    def add_column(self, cname: str, dtype: type, dsize: int, default: str = '') -> None:
         self.attributes.append(cname)
         
         fstr = self._fstr_of_dtype(dtype)
@@ -199,7 +278,7 @@ class X10File:
         for record in self.records:
             record[cname] = default
             
-    def remove_column(self, cname):
+    def remove_column(self, cname: str) -> None:
         column_index = self.attributes.index(cname)
         
         del self.attributes[column_index]
@@ -208,7 +287,7 @@ class X10File:
         for record in self.records:
             del record[cname]
             
-    def add_record(self, rdata, primary_key=None):
+    def add_record(self, rdata: dict[str, any], primary_key: str|None = None) -> None:
         record_existing = False
         record_pkfields = self._create_compare_record(rdata, primary_key)
         for i in range(len(self.records)):
@@ -221,7 +300,7 @@ class X10File:
         if not record_existing:
             self.records.append(rdata)
             
-    def remove_records(self, rdata, primary_key=None):
+    def remove_records(self, rdata: dict[str, any], primary_key: str|None = None) -> None:
         updated_records = list()
         for i in range(len(self.records)):
             compare_record = self._create_compare_record(self.records[i], primary_key)
@@ -231,7 +310,7 @@ class X10File:
                 
         self.records = updated_records 
 
-    def find_records(self, rdata, primary_key=None):
+    def find_records(self, rdata: dict[str, any], primary_key: str|None = None) -> list[dict]:
         rdata = self._create_compare_record(rdata, primary_key)
         
         result_records = list()
@@ -243,7 +322,7 @@ class X10File:
 
         return result_records
     
-    def find_record(self, rdata, primary_key=None):
+    def find_record(self, rdata: dict[str, any], primary_key: str|None = None) -> dict:
         rdata = self._create_compare_record(rdata, primary_key)
         
         for i in range(len(self.records)):
@@ -252,7 +331,7 @@ class X10File:
             if rdata == compare_record:
                 return self.records[i]
             
-    def replace_foreign_keys(self, foreign_key_columns, repl_map):
+    def replace_foreign_keys(self, foreign_key_columns: list[str], repl_map: dict[str, any]) -> None:
         for i in range(len(self.records)):
             original_record = self.records[i]
             updated_record = dict(original_record)
@@ -266,70 +345,7 @@ class X10File:
             if updated:
                 self.records[i] = updated_record
             
-    def close(self):
-        self._internal_init()
-        
-    def _internal_init(self):
-        
-        self._filename = None
-        
-        self.date_format = None
-        self.time_format = None
-        self.representation = None
-        self.creator_name = None
-        self.creation_date = None
-        self.creation_time = None
-        self.charset = None
-        self.file_version = None
-        self.interface_version = None
-        self.data_version = None
-        self.file_format = None
-        self.table_name = None
-        self.attributes = list()
-        self.datatypes = list()
-        self.records = list()
-                          
-            
-    def _create_value(self, val, dtype=str):
-        
-        if dtype == str:
-            return f" \"{val}\""
-        else:
-            return f" {val}"
-            
-    def _dtype_of_fstr(self, fstr, fsize=None):
-        
-        if fstr == 'char':
-            return str
-        elif fstr == 'boolean':
-            return bool
-        elif fstr == 'num' and fsize is not None:
-            decimal_places = int(fsize.split('.')[1])
-            if decimal_places > 0:
-                return float
-            else:
-                return int
-        else:
-            return int
-            
-    def _fstr_of_dtype(self, dtype):
-        
-        if dtype == str:
-            return 'char'
-        elif dtype == bool:
-            return 'boolean'
-        else:
-            return 'num'
-        
-    def _create_compare_record(self, record, primary_key):
-    
-        if primary_key is not None:
-            compare_record = dict(record)
-            if primary_key is not None:
-                for k in record:
-                    if k not in primary_key:
-                        del compare_record[k]
-                        
-            return compare_record
-        else:
-            return record
+    def close(self) -> None:
+        del self.records
+
+        self._internal_init(self._filename)
