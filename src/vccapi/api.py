@@ -16,6 +16,7 @@ from vcclib.model import Stop
 from vcclib.model import Trip
 from vcclib.model import MasterDataVehicle
 from vcclib.model import MasterDataObjectClass
+from vcclib.version import __version__
 
 from vcclib.model import sqlobject2dict
 
@@ -188,5 +189,6 @@ async def system_health():
     vcc_timezone = os.getenv('VCC_TIMEZONE', 'Europe/Berlin')
 
     return {
-        'timestamp': int(datetime.now().astimezone((pytz.timezone(vcc_timezone))).timestamp())
+        'timestamp': int(datetime.now().astimezone((pytz.timezone(vcc_timezone))).timestamp()),
+        'vcc_version': __version__
     }
