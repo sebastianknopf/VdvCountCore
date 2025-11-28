@@ -37,6 +37,13 @@ class CsvAdapter(BaseAdapter):
         vehicle_data = self._internal_read_csv_file(input_directory, 'vehicles.csv')
         for i, record in enumerate(vehicle_data):
             try:
+
+                # check validity of data before inserting
+                # skip the element and log an error, if it is invalid
+                if not record['num_doors'].isdigit():
+                    logging.error(f"Cannot import vehicle {record['name']}, column num_doors has invalid value \"{record['num_doors']}\"!")
+                    continue
+                
                 MasterDataVehicle(
                     name=record['name'],
                     num_doors=int(record['num_doors']),
@@ -63,7 +70,12 @@ class CsvAdapter(BaseAdapter):
 
         object_class_data = self._internal_read_csv_file(input_directory, 'object_classes.csv')
         for i, record in enumerate(object_class_data):
-            try:                
+            try:
+
+                # check validity of data before inserting
+                # skip the element and log an error, if it is invalid
+                # sadly, there's nothing to validate here at all ...
+
                 MasterDataObjectClass(
                     name=record['name'],
                     description=record['description'],
