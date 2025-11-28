@@ -32,6 +32,14 @@
             "group": "build",
             "problemMatcher": [],
             "isBackground": true
+        },
+        {
+            "label": "vccmdimport-dev",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yaml -f docker-compose.dev.yaml --env-file dev.env up -d --build vcc-md-import",
+            "group": "build",
+            "problemMatcher": [],
+            "isBackground": true
         }
     ]
 }
