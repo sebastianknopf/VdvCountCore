@@ -1,0 +1,199 @@
+import pytest
+
+import vccvdv457export.__main__ as main
+
+
+class FakeDDB:
+    instances = []
+
+    def __init__(self, data_directory, schema_filename):
+        self.closed = False
+        FakeDDB.instances.append(self)
+
+    def close(self):
+        self.closed = True
+
+
+class OkAdapter:
+    calls = []
+
+    def __init__(self, archive_name, create_reports):
+        self.archive_name, self.create_reports = archive_name, create_reports
+
+    def process(self, ddb, output_directory, dubious_output_directory):
+        OkAdapter.calls.append((self.create_reports, output_directory, dubious_output_directory))
+
+
+class FailingAdapter(OkAdapter):
+    def process(self, ddb, output_directory, dubious_output_directory):
+        raise RuntimeError('conversion failed')
+
+
+@pytest.fixture
+def env(monkeypatch):
+    for name in ('VCC_VDV457_EXPORT_CONVERT_2', 'VCC_VDV457_EXPORT_CONVERT_3', 'VCC_VDV457_EXPORT_REPORT_2',
+                 'VCC_VDV457_EXPORT_REPORT_3', 'VCC_VDV457_EXPORT_ADAPTER_TYPE_2', 'VCC_VDV457_EXPORT_ADAPTER_TYPE_3',
+                 'VCC_DEBUG'):
+        monkeypatch.delenv(name, raising=False)
+
+    FakeDDB.instances.clear()
+    OkAdapter.calls.clear()
+
+    archived = []
+    staged = []
+    monkeypatch.setattr(main, 'directory_contains_files', lambda directory: True)
+    monkeypatch.setattr(main, 'stage_directory_files', lambda *args: staged.append(args))
+    monkeypatch.setattr(main, 'archive_directory_files', lambda *args: archived.append(args))
+    monkeypatch.setattr(main, 'DuckDB', FakeDDB)
+    monkeypatch.setattr(main.s2, 'DefaultAdapter', OkAdapter)
+    monkeypatch.setattr(main.s3, 'DefaultAdapter', OkAdapter)
+
+    return {'archived': archived, 'staged': staged, 'monkeypatch': monkeypatch}
+
+
+def failed(env) -> bool:
+    [call] = env['archived']
+    return call[3]
+
+
+class TestRunNow:
+
+    def test_empty_input_directory_does_nothing(self, env):
+        env['monkeypatch'].setattr(main, 'directory_contains_files', lambda directory: False)
+
+        main._run_now()
+
+        assert env['staged'] == [] and env['archived'] == [] and FakeDDB.instances == []
+
+    def test_files_are_staged_before_processing(self, env):
+        main._run_now()
+
+        assert env['staged'] == [('/data/input', '/data/stage')]
+
+    def test_no_converter_enabled_archives_without_failure(self, env):
+        main._run_now()
+
+        assert OkAdapter.calls == []
+        assert failed(env) is False
+        assert FakeDDB.instances[0].closed
+
+    def test_vdv4572_converter_uses_its_directories(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
+
+        main._run_now()
+
+        assert OkAdapter.calls == [(False, '/data/vdv4572/success', '/data/vdv4572/dubious')]
+        assert failed(env) is False
+
+    def test_vdv4573_converter_uses_its_directories(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_3', '1')
+
+        main._run_now()
+
+        assert OkAdapter.calls == [(False, '/data/vdv4573/success', '/data/vdv4573/dubious')]
+
+    def test_both_converters_run_when_enabled(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_3', 'true')
+
+        main._run_now()
+
+        assert len(OkAdapter.calls) == 2
+
+    def test_reports_are_enabled_per_converter(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_3', 'true')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_REPORT_3', 'true')
+
+        main._run_now()
+
+        assert [c[0] for c in OkAdapter.calls] == [False, True]
+
+    def test_disabled_converter_flag_is_not_run(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'false')
+
+        main._run_now()
+
+        assert OkAdapter.calls == []
+
+    def test_failing_converter_marks_archive_as_failed(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
+        env['monkeypatch'].setattr(main.s2, 'DefaultAdapter', FailingAdapter)
+
+        main._run_now()
+
+        assert failed(env) is True
+        assert FakeDDB.instances[0].closed
+
+    def test_failing_converter_does_not_stop_the_other_converter(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_3', 'true')
+        env['monkeypatch'].setattr(main.s2, 'DefaultAdapter', FailingAdapter)
+
+        main._run_now()
+
+        assert len(OkAdapter.calls) == 1
+        assert OkAdapter.calls[0][1] == '/data/vdv4573/success'
+        assert failed(env) is True
+
+    def test_unknown_adapter_type_marks_archive_as_failed(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_2', 'unknown')
+
+        main._run_now()
+
+        assert OkAdapter.calls == []
+        assert failed(env) is True
+
+    def test_unknown_adapter_type_for_vdv4573_marks_archive_as_failed(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_3', 'true')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_ADAPTER_TYPE_3', 'unknown')
+
+        main._run_now()
+
+        assert failed(env) is True
+
+    def test_database_initialisation_error_marks_archive_as_failed(self, env):
+        def broken(*args):
+            raise OSError('no schema')
+
+        env['monkeypatch'].setattr(main, 'DuckDB', broken)
+
+        main._run_now()
+
+        assert failed(env) is True
+
+    def test_archive_receives_directories_and_batch_name(self, env):
+        main._run_now()
+
+        stage, input_directory, archive_name, _ = env['archived'][0]
+        assert (stage, input_directory) == ('/data/stage', '/data/input')
+        assert len(archive_name) == 14 and archive_name.isdigit()
+
+
+class TestRun:
+
+    def test_runs_when_cron_matches(self, env):
+        calls = []
+        env['monkeypatch'].setattr(main, '_run_now', lambda: calls.append(1))
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_INTERVAL', '* * * * *')
+
+        main.run()
+
+        assert calls == [1]
+
+    def test_does_not_run_when_cron_does_not_match(self, env):
+        calls = []
+        env['monkeypatch'].setattr(main, '_run_now', lambda: calls.append(1))
+        # a date that never matches: February 31st
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_INTERVAL', '0 0 30 2 *')
+
+        main.run()
+
+        assert calls == []
+
+    def test_invalid_cron_expression_raises(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_INTERVAL', 'not a cron')
+
+        with pytest.raises(Exception):
+            main.run()
