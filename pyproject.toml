@@ -49,5 +49,13 @@ all = [
     "vcc[vdv452import,mdimport,api,vdv457export]"
 ]
 
+test = [
+    "pytest"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
 [tool.setuptools_scm]
 write_to = "src/vcclib/version.py"
