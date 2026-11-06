@@ -27,7 +27,7 @@ class DuckDB:
         for filename in os.listdir(data_directory):
             if filename.endswith('.json'):
                 logging.info(f"Loading file {filename} ...")
-                self._ddb.execute(f"INSERT INTO {table_name} SELECT * FROM read_json_auto('{os.path.join(data_directory, filename)}')")
+                self._ddb.execute(f"INSERT INTO {table_name} BY NAME SELECT * FROM read_json_auto('{os.path.join(data_directory, filename)}')")
 
     def get_primary_indicators(self) -> Dict[tuple, str]:
         result = self._execute_sql_statement('select_primary_indicators')
@@ -94,6 +94,19 @@ class DuckDB:
 
         # transform result into list
         return result.to_dicts()
+
+    def get_counting_types(self, operation_day: int, trip_id: int, vehicle_id: str) -> List[str]:
+        result = self._execute_sql_statement(
+            'select_counting_types',
+            operation_day=operation_day,
+            trip_id=trip_id,
+            vehicle_id=vehicle_id
+        )
+
+        if is_debug():
+            logging.info(result)
+
+        return result['counting_type'].to_list()
 
     def _execute_sql_statement(self, sql_filename: str, **arguments: Any) -> str:
 

@@ -28,6 +28,16 @@ class BaseAdapter(ABC):
         pass
 
     def load_trip_details(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str) -> Trip:
+        counting_types: list[str] = ddb.get_counting_types(operation_day, trip_id, vehicle_id)
+        counting_types = [ct if ct is not None else 'COMPARISON' for ct in counting_types]
+
+        if len(counting_types) > 1:
+            raise ValueError(
+                f"Trip ID {trip_id} with vehicle ID {vehicle_id} at {operation_day} contains conflicting counting_type values: {','.join(counting_types)}"
+            )
+
+        counting_type: str = counting_types[0] if len(counting_types) > 0 else 'COMPARISON'
+
         trip_details_data: list = ddb.get_trip_details(
             operation_day,
             trip_id,
@@ -45,6 +55,7 @@ class BaseAdapter(ABC):
         trip.vehicle_num_doors = trip_details_data[0]['vehicle_num_doors']
         trip.international_id = trip_details_data[0]['trip_international_id']
         trip.direction = trip_details_data[0]['direction']
+        trip.counting_type = counting_type
         trip.line = line
 
         for tdd in trip_details_data:

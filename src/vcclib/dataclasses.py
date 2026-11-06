@@ -43,10 +43,12 @@ class Trip:
     vehicle_num_doors: str
     direction: int
     line: Line
+    counting_type: str = 'COMPARISON'
     international_id: str|None = None
     stop_times: List[StopTime] = field(default_factory=list)
 
     def __init__(self) -> None:
+        self.counting_type = 'COMPARISON'
         self.stop_times = list()
 
 @dataclass

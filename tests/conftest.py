@@ -46,7 +46,7 @@ def ts(offset_seconds: int = 0) -> int:
 
 def make_row(stop_id: int | None = 1, begin: int = 0, end: int | None = None, door_id: str = '1',
              count_in: int = 1, count_out: int = 0, object_class: str = 'Adult', area_id: str = '1',
-             sequence: int | None = None, after_stop_sequence: int = -1,
+             sequence: int | None = None, after_stop_sequence: int = -1, counting_type: str = 'COMPARISON',
              lat: float = 48.0, lon: float = 9.0) -> dict:
     """One row as returned by DuckDB.get_data(); begin/end are seconds relative to BASE_TIME."""
     return {
@@ -63,6 +63,7 @@ def make_row(stop_id: int | None = 1, begin: int = 0, end: int | None = None, do
         'door_id': door_id,
         'counting_area_id': area_id,
         'object_class': object_class,
+        'counting_type': counting_type,
         'begin_timestamp': ts(begin),
         'end_timestamp': ts(begin + 10 if end is None else end),
         'in': count_in,
@@ -83,6 +84,7 @@ def trip_details_rows(trip: Trip) -> list[dict]:
             'vehicle_id': trip.vehicle_id,
             'vehicle_num_doors': trip.vehicle_num_doors,
             'direction': trip.direction,
+            'counting_type': trip.counting_type,
             'stop_id': st.stop.id,
             'stop_parent_id': st.stop.parent_id,
             'stop_international_id': st.stop.international_id,
@@ -116,6 +118,15 @@ class FakeDuckDB:
 
     def get_trip_details(self, operation_day, trip_id, vehicle_id) -> list:
         return trip_details_rows(self._trip)
+
+    def get_counting_types(self, operation_day, trip_id, vehicle_id) -> list:
+        counting_types = set()
+        for (od, tid, vid, _), rows in self._data.items():
+            if od == operation_day and tid == trip_id and vid == vehicle_id:
+                for row in rows:
+                    counting_types.add(row.get('counting_type', 'COMPARISON') or 'COMPARISON')
+
+        return sorted(counting_types) if len(counting_types) > 0 else ['COMPARISON']
 
 
 TRIP_KEY = (20250101, 1, 'v1')

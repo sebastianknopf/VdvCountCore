@@ -227,6 +227,9 @@
       "direction": {
         "type": "integer"
       },
+      "counting_type": {
+        "type": "string"
+      },
       "headsign": {
         "type": "string"
       },

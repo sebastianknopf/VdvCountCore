@@ -71,6 +71,23 @@ class TestLoadTripDetails:
         with pytest.raises(IndexError):
             DummyAdapter().load_trip_details(EmptyDDB(trip, {}), 20250101, 1, 'v1')
 
+    def test_conflicting_counting_types_raise(self, trip):
+        class ConflictingCountingTypeDDB(FakeDuckDB):
+            def get_counting_types(self, *args):
+                return ['COMPARISON', 'PRODUCTION']
+
+        with pytest.raises(ValueError, match='conflicting counting_type'):
+            DummyAdapter().load_trip_details(ConflictingCountingTypeDDB(trip, {}), 20250101, 1, 'v1')
+
+    def test_missing_counting_type_defaults_to_comparison(self, trip):
+        class MissingCountingTypeDDB(FakeDuckDB):
+            def get_counting_types(self, *args):
+                return []
+
+        loaded = DummyAdapter().load_trip_details(MissingCountingTypeDDB(trip, {}), 20250101, 1, 'v1')
+
+        assert loaded.counting_type == 'COMPARISON'
+
 
 class TestVerificationReports:
 
