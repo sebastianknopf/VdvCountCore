@@ -20,12 +20,12 @@ class OkAdapter:
     def __init__(self, archive_name, create_reports):
         self.archive_name, self.create_reports = archive_name, create_reports
 
-    def process(self, ddb, output_directory, invalid_output_directory):
-        OkAdapter.calls.append((self.create_reports, output_directory, invalid_output_directory))
+    def process(self, ddb, output_directory, invalid_output_directory, passenger_counting_output_directory=None, comparison_counting_output_directory=None):
+        OkAdapter.calls.append((self.create_reports, output_directory, invalid_output_directory, passenger_counting_output_directory, comparison_counting_output_directory))
 
 
 class FailingAdapter(OkAdapter):
-    def process(self, ddb, output_directory, invalid_output_directory):
+    def process(self, ddb, output_directory, invalid_output_directory, passenger_counting_output_directory=None, comparison_counting_output_directory=None):
         raise RuntimeError('conversion failed')
 
 
@@ -86,7 +86,7 @@ class TestRunNow:
 
         main._run_now()
 
-        assert OkAdapter.calls == [(False, '/data/vdv4572', '/data/vdv4572')]
+        assert OkAdapter.calls == [(False, '/data/vdv4572', '/data/vdv4572', None, None)]
         assert failed(env) is False
 
     def test_vdv4573_converter_uses_its_directories(self, env):
@@ -94,7 +94,7 @@ class TestRunNow:
 
         main._run_now()
 
-        assert OkAdapter.calls == [(False, '/data/vdv4573', '/data/vdv4573')]
+        assert OkAdapter.calls == [(False, '/data/vdv4573', '/data/vdv4573', None, None)]
 
     def test_converter_uses_configured_invalid_directory(self, env):
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
@@ -103,7 +103,17 @@ class TestRunNow:
 
         main._run_now()
 
-        assert OkAdapter.calls == [(False, '/base/2', '/invalid/2')]
+        assert OkAdapter.calls == [(False, '/base/2', '/invalid/2', None, None)]
+
+    def test_converter_uses_configured_counting_directories(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', '/base/2')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_2', '/pc/2')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_2', '/cc/2')
+
+        main._run_now()
+
+        assert OkAdapter.calls == [(False, '/base/2', '/base/2', '/pc/2', '/cc/2')]
 
     def test_both_converters_run_when_enabled(self, env):
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')

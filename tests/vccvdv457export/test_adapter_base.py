@@ -9,7 +9,7 @@ from vccvdv457export.adapter.base import BaseAdapter
 
 
 class DummyAdapter(BaseAdapter):
-    def process(self, ddb, output_directory, invalid_output_directory):
+    def process(self, ddb, output_directory, invalid_output_directory, passenger_counting_output_directory=None, comparison_counting_output_directory=None):
         pass
 
 
@@ -190,7 +190,7 @@ class TestExport:
         return str(success), str(invalid)
 
     def test_writes_one_xml_per_trip(self, dirs):
-        DummyAdapter()._export({(20250101, 1, 'v1'): '<a/>', (20250101, 2, 'v1'): '<b/>'}, *dirs)
+        DummyAdapter()._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON'), (20250101, 2, 'v1'): ('<b/>', 'PASSENGER')}, *dirs)
 
         files = sorted(os.listdir(dirs[0]))
         assert len(files) == 2
@@ -207,7 +207,7 @@ class TestExport:
         adapter = DummyAdapter()
         adapter._report(20250101, 1, 'v1', 903, 'ERROR', 'doors')
 
-        adapter._export({(20250101, 1, 'v1'): '<a/>'}, *dirs)
+        adapter._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON')}, *dirs)
 
         assert os.listdir(dirs[0]) == []
         assert len(os.listdir(dirs[1])) == 1
@@ -216,7 +216,7 @@ class TestExport:
         adapter = DummyAdapter()
         adapter._report(20250101, 1, 'v1', 903, 'error', 'doors')
 
-        adapter._export({(20250101, 1, 'v1'): '<a/>'}, *dirs)
+        adapter._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON')}, *dirs)
 
         assert len(os.listdir(dirs[1])) == 1
 
@@ -224,7 +224,7 @@ class TestExport:
         adapter = DummyAdapter()
         adapter._report(20250101, 1, 'v1', 801, 'WARNING', 'first stop')
 
-        adapter._export({(20250101, 1, 'v1'): '<a/>'}, *dirs)
+        adapter._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON')}, *dirs)
 
         assert len(os.listdir(dirs[0])) == 1
         assert os.listdir(dirs[1]) == []
@@ -233,16 +233,15 @@ class TestExport:
         adapter = DummyAdapter()
         adapter._report(20250101, 99, 'v1', 903, 'ERROR', 'doors')
 
-        adapter._export({(20250101, 1, 'v1'): '<a/>'}, *dirs)
+        adapter._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON')}, *dirs)
 
         assert len(os.listdir(dirs[0])) == 1
 
-    @pytest.mark.xfail(strict=True, reason="Known bug: output directory stays 'invalid' for all following trips")
     def test_error_in_one_trip_does_not_move_following_trips(self, dirs):
         adapter = DummyAdapter()
         adapter._report(20250101, 1, 'v1', 903, 'ERROR', 'doors')
 
-        adapter._export({(20250101, 1, 'v1'): '<a/>', (20250101, 2, 'v1'): '<b/>'}, *dirs)
+        adapter._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON'), (20250101, 2, 'v1'): ('<b/>', 'COMPARISON')}, *dirs)
 
         assert len(os.listdir(dirs[0])) == 1
         assert len(os.listdir(dirs[1])) == 1
@@ -251,7 +250,7 @@ class TestExport:
         adapter = DummyAdapter('archive', reports_create=False)
         adapter._report(20250101, 1, 'v1', 801, 'WARNING', 'first stop')
 
-        adapter._export({(20250101, 1, 'v1'): '<a/>'}, *dirs)
+        adapter._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON')}, *dirs)
 
         assert [f for f in os.listdir(dirs[0]) if f.endswith('_Report.txt')] == []
 
@@ -260,7 +259,7 @@ class TestExport:
         adapter._report(20250101, 1, 'v1', 801, 'WARNING', 'first; stop')
         adapter._report(20250101, 2, 'v1', 802, 'WARNING', 'other trip')
 
-        adapter._export({(20250101, 1, 'v1'): '<a/>'}, *dirs)
+        adapter._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON')}, *dirs)
 
         [report_file] = [f for f in os.listdir(dirs[0]) if f.endswith('_T1_v1_Report.txt')]
         with open(os.path.join(dirs[0], report_file)) as f:
@@ -274,7 +273,7 @@ class TestExport:
     def test_report_file_without_reports_has_only_header(self, dirs):
         adapter = DummyAdapter('archive', reports_create=True)
 
-        adapter._export({(20250101, 1, 'v1'): '<a/>'}, *dirs)
+        adapter._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON')}, *dirs)
 
         [report_file] = [f for f in os.listdir(dirs[0]) if f.endswith('_Report.txt')]
         with open(os.path.join(dirs[0], report_file)) as f:
@@ -284,10 +283,47 @@ class TestExport:
         adapter = DummyAdapter('archive', reports_create=True)
         adapter._report(20250101, 1, 'v1', 903, 'ERROR', 'doors')
 
-        adapter._export({(20250101, 1, 'v1'): '<a/>'}, *dirs)
+        adapter._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON')}, *dirs)
 
         assert sorted(f.rsplit('_', 1)[-1] for f in os.listdir(dirs[1])) == ['Report.txt', 'v1.xml']
 
     def test_missing_output_directory_raises(self, tmp_path):
         with pytest.raises(FileNotFoundError):
-            DummyAdapter()._export({(20250101, 1, 'v1'): '<a/>'}, str(tmp_path / 'missing'), str(tmp_path / 'missing2'))
+            DummyAdapter()._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON')}, str(tmp_path / 'missing'), str(tmp_path / 'missing2'))
+
+    def test_passenger_counting_type_uses_passenger_directory(self, dirs):
+        passenger_directory = os.path.join(os.path.dirname(dirs[0]), 'passenger')
+        os.mkdir(passenger_directory)
+
+        DummyAdapter()._export({(20250101, 1, 'v1'): ('<a/>', 'PASSENGER')}, dirs[0], dirs[1], passenger_directory, None)
+
+        assert len(os.listdir(passenger_directory)) == 1
+        assert os.listdir(dirs[0]) == []
+        assert os.listdir(dirs[1]) == []
+
+    def test_comparison_counting_type_uses_comparison_directory(self, dirs):
+        comparison_directory = os.path.join(os.path.dirname(dirs[0]), 'comparison')
+        os.mkdir(comparison_directory)
+
+        DummyAdapter()._export({(20250101, 1, 'v1'): ('<a/>', 'COMPARISON')}, dirs[0], dirs[1], None, comparison_directory)
+
+        assert len(os.listdir(comparison_directory)) == 1
+        assert os.listdir(dirs[0]) == []
+        assert os.listdir(dirs[1]) == []
+
+    def test_counting_directory_falls_back_to_base_if_not_defined(self, dirs):
+        DummyAdapter()._export({(20250101, 1, 'v1'): ('<a/>', 'PASSENGER')}, *dirs)
+
+        assert len(os.listdir(dirs[0])) == 1
+        assert os.listdir(dirs[1]) == []
+
+    def test_invalid_report_overrides_counting_directory(self, dirs):
+        adapter = DummyAdapter()
+        adapter._report(20250101, 1, 'v1', 903, 'ERROR', 'doors')
+        passenger_directory = os.path.join(os.path.dirname(dirs[0]), 'passenger')
+        os.mkdir(passenger_directory)
+
+        adapter._export({(20250101, 1, 'v1'): ('<a/>', 'PASSENGER')}, dirs[0], dirs[1], passenger_directory, None)
+
+        assert len(os.listdir(dirs[1])) == 1
+        assert os.listdir(passenger_directory) == []

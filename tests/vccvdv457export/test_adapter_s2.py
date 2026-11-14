@@ -54,7 +54,7 @@ class TestTransform:
     def transform(self, trip, rows=None):
         adapter = DefaultAdapter()
         pces = adapter._extract(make_ddb(trip, rows))[KEY]
-        key, xml = adapter._transform(FakeDuckDB(trip, {}), *KEY, pces)
+        key, xml, _ = adapter._transform(FakeDuckDB(trip, {}), *KEY, pces)
         assert key == KEY
         return parse(xml), adapter
 
