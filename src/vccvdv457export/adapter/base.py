@@ -24,7 +24,7 @@ class BaseAdapter(ABC):
         self._reports_create: bool = reports_create
 
     @abstractmethod
-    def process(self, ddb: DuckDB, output_directory: str, invalid_output_directory:str) -> None:
+    def process(self, ddb: DuckDB, output_directory: str, invalid_output_directory:str, passenger_counting_output_directory: str|None = None, comparison_counting_output_directory: str|None = None) -> None:
         pass
 
     def load_trip_details(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str) -> Trip:
@@ -174,10 +174,13 @@ class BaseAdapter(ABC):
             'comment': None
         })
     
-    def _export(self, transformed_data: Dict[tuple, str], output_directory: str, invalid_output_directory: str) -> None:   
+    def _export(self, transformed_data: Dict[tuple, tuple[str, str]], output_directory: str, invalid_output_directory: str, passenger_counting_output_directory: str|None = None, comparison_counting_output_directory: str|None = None) -> None:   
         
         # write each dataset to a single file
-        for k, x in transformed_data.items():
+        for k, transformed in transformed_data.items():
+            x: str = transformed[0]
+            counting_type: str = transformed[1]
+            current_output_directory: str = output_directory
 
             formatted_date: str = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 
@@ -188,13 +191,18 @@ class BaseAdapter(ABC):
             # extract reports for this unique combination
             matching_reports: list = [r for r in self._reports if r['trip_id'] == trip_id and r['operation_day'] == operation_day and r['vehicle_id'] == vehicle_id]
 
+            if counting_type.upper() == 'PASSENGER' and passenger_counting_output_directory is not None:
+                current_output_directory = passenger_counting_output_directory
+            elif counting_type.upper() == 'COMPARISON' and comparison_counting_output_directory is not None:
+                current_output_directory = comparison_counting_output_directory
+
             # map to invalid output file if we have any logs with level ERROR
             if any([True for r in matching_reports if r['log_level'].lower() == 'error']):
-                output_directory = invalid_output_directory
+                current_output_directory = invalid_output_directory
 
             # generate XML output file
             output_filename: str = os.path.join(
-                output_directory, 
+                current_output_directory, 
                 f"{formatted_date}_O{operation_day}_T{trip_id}_{vehicle_id}.xml"
             )
 
@@ -204,7 +212,7 @@ class BaseAdapter(ABC):
             # generate report output file
             if self._reports_create:
                 report_filename: str = os.path.join(
-                    output_directory, 
+                    current_output_directory, 
                     f"{formatted_date}_O{operation_day}_T{trip_id}_{vehicle_id}_Report.txt"
                 )
 

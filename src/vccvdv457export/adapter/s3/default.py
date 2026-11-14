@@ -23,8 +23,8 @@ class DefaultAdapter(BaseAdapter):
     def __init__(self, reports_archive_name: str = '', reports_create: bool = False) -> None:
         super().__init__(reports_archive_name, reports_create)
 
-    def process(self, ddb: DuckDB, output_directory: str, invalid_output_directory: str) -> None:
-        super().process(ddb, output_directory, invalid_output_directory)
+    def process(self, ddb: DuckDB, output_directory: str, invalid_output_directory: str, passenger_counting_output_directory: str|None = None, comparison_counting_output_directory: str|None = None) -> None:
+        super().process(ddb, output_directory, invalid_output_directory, passenger_counting_output_directory, comparison_counting_output_directory)
 
         # extract PCE from loaded data
         logging.info("Extracting PCE data from local DDB ...")
@@ -33,14 +33,14 @@ class DefaultAdapter(BaseAdapter):
         # transform each operation_day/trip_id combination into final data structure
         logging.info(f"Transforming data of {len(extracted_data.keys())} trips ...")
 
-        transformed_data: Dict[tuple, str] = dict()
+        transformed_data: Dict[tuple, tuple[str, str]] = dict()
         for (operation_day, trip_id, vehicle_id), passenger_counting_events in extracted_data.items():
-            key, value = self._transform(ddb, operation_day, trip_id, vehicle_id, passenger_counting_events)
-            transformed_data[key] = value
+            key, value, counting_type = self._transform(ddb, operation_day, trip_id, vehicle_id, passenger_counting_events)
+            transformed_data[key] = (value, counting_type)
 
         # export data finally
         logging.info(f"Exporting {len(transformed_data)} trips ...")
-        self._export(transformed_data, output_directory, invalid_output_directory)
+        self._export(transformed_data, output_directory, invalid_output_directory, passenger_counting_output_directory, comparison_counting_output_directory)
 
     def _extract(self, ddb: DuckDB) -> Dict[tuple, List[PassengerCountingEvent]]:
         
@@ -77,7 +77,7 @@ class DefaultAdapter(BaseAdapter):
         # finally return generated results
         return results
 
-    def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str, passenger_counting_events: List[PassengerCountingEvent]) -> Tuple[tuple, str]:
+    def _transform(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str, passenger_counting_events: List[PassengerCountingEvent]) -> Tuple[tuple, str, str]:
         
         # select trip details and obtain basic data
         trip: Trip = self.load_trip_details(ddb, operation_day, trip_id, vehicle_id)
@@ -229,7 +229,7 @@ class DefaultAdapter(BaseAdapter):
             'PassengerCountingServiceBGS_457-3.GetAllDataResponse': result
         }, pretty=True)
 
-        return (operation_day, trip_id, vehicle_id), xml
+        return (operation_day, trip_id, vehicle_id), xml, trip.counting_type
 
     def _update_unmatched_pces(self, trip: Trip, passenger_counting_events: List[PassengerCountingEvent]) -> List[PassengerCountingEvent]:
 
