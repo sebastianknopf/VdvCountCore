@@ -24,7 +24,7 @@ class BaseAdapter(ABC):
         self._reports_create: bool = reports_create
 
     @abstractmethod
-    def process(self, ddb: DuckDB, output_directory: str, dubious_output_directory:str) -> None:
+    def process(self, ddb: DuckDB, output_directory: str, invalid_output_directory:str) -> None:
         pass
 
     def load_trip_details(self, ddb: DuckDB, operation_day: int, trip_id: int, vehicle_id: str) -> Trip:
@@ -174,7 +174,7 @@ class BaseAdapter(ABC):
             'comment': None
         })
     
-    def _export(self, transformed_data: Dict[tuple, str], output_directory: str, dubious_output_directory: str) -> None:   
+    def _export(self, transformed_data: Dict[tuple, str], output_directory: str, invalid_output_directory: str) -> None:   
         
         # write each dataset to a single file
         for k, x in transformed_data.items():
@@ -188,9 +188,9 @@ class BaseAdapter(ABC):
             # extract reports for this unique combination
             matching_reports: list = [r for r in self._reports if r['trip_id'] == trip_id and r['operation_day'] == operation_day and r['vehicle_id'] == vehicle_id]
 
-            # map to dubious output file if we have any logs with level ERROR
+            # map to invalid output file if we have any logs with level ERROR
             if any([True for r in matching_reports if r['log_level'].lower() == 'error']):
-                output_directory = dubious_output_directory
+                output_directory = invalid_output_directory
 
             # generate XML output file
             output_filename: str = os.path.join(

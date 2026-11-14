@@ -16,6 +16,16 @@ from vcclib.filesystem import stage_directory_files
 from vcclib.filesystem import archive_directory_files
 from vccvdv457export.adapter.base import BaseAdapter
 
+def _get_output_directories(converter_suffix: str) -> tuple[str, str]:
+    base_directory: str = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_{converter_suffix}', f'/data/vdv457{converter_suffix}')
+    invalid_directory: str = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_{converter_suffix}', base_directory)
+
+    # reserved for later usage
+    os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_{converter_suffix}')
+    os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_{converter_suffix}')
+
+    return base_directory, invalid_directory
+
 def run():
     
     now = datetime.now().replace(second=0, microsecond=0)
@@ -68,11 +78,12 @@ def _run_now():
                 raise ValueError(f"Unknown VDV457-2 adapter type {adapter_type}!")
             
             try:
+                output_directory, invalid_output_directory = _get_output_directories('2')
                 logging.info(f"Running VDV457-2 converter {adapter_type} ...")
                 adapter.process(
                     ddb, 
-                    '/data/vdv4572/success', 
-                    '/data/vdv4572/dubious'
+                    output_directory, 
+                    invalid_output_directory
                 )
             except Exception as ex:
                 any_converter_failed = True
@@ -95,11 +106,12 @@ def _run_now():
                 raise ValueError(f"Unknown VDV457-3 adapter type {adapter_type}!")
 
             try:
+                output_directory, invalid_output_directory = _get_output_directories('3')
                 logging.info(f"Running VDV457-3 converter {adapter_type} ...")
                 adapter.process(
                     ddb, 
-                    '/data/vdv4573/success', 
-                    '/data/vdv4573/dubious'
+                    output_directory, 
+                    invalid_output_directory
                 )
             except Exception as ex:
                 any_converter_failed = True
