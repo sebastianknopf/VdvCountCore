@@ -1,6 +1,8 @@
 import click
 import logging
+import ntpath
 import os
+import posixpath
 import time
 
 import vccvdv457export.adapter.s2.default as s2
@@ -16,11 +18,24 @@ from vcclib.filesystem import stage_directory_files
 from vcclib.filesystem import archive_directory_files
 from vccvdv457export.adapter.base import BaseAdapter
 
+def _resolve_relative_directory(base_directory: str, directory: str|None) -> str|None:
+    if directory is None:
+        return None
+
+    _, relative_directory = ntpath.splitdrive(directory)
+    relative_directory = relative_directory.lstrip('/\\')
+
+    return posixpath.normpath(posixpath.join(base_directory, relative_directory))
+
 def _get_output_directories(converter_suffix: str) -> tuple[str, str, str|None, str|None]:
     base_directory: str = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_{converter_suffix}', f'/data/vdv457{converter_suffix}')
-    invalid_directory: str = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_{converter_suffix}', base_directory)
+    invalid_directory_env: str|None = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_{converter_suffix}')
     passenger_counting_directory: str|None = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_{converter_suffix}')
     comparison_counting_directory: str|None = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_{converter_suffix}')
+
+    invalid_directory: str = base_directory if invalid_directory_env is None else _resolve_relative_directory(base_directory, invalid_directory_env)
+    passenger_counting_directory = _resolve_relative_directory(base_directory, passenger_counting_directory)
+    comparison_counting_directory = _resolve_relative_directory(base_directory, comparison_counting_directory)
 
     return base_directory, invalid_directory, passenger_counting_directory, comparison_counting_directory
 

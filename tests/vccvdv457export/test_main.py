@@ -103,7 +103,7 @@ class TestRunNow:
 
         main._run_now()
 
-        assert OkAdapter.calls == [(False, '/base/2', '/invalid/2', None, None)]
+        assert OkAdapter.calls == [(False, '/base/2', '/base/2/invalid/2', None, None)]
 
     def test_converter_uses_configured_counting_directories(self, env):
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
@@ -113,7 +113,18 @@ class TestRunNow:
 
         main._run_now()
 
-        assert OkAdapter.calls == [(False, '/base/2', '/base/2', '/pc/2', '/cc/2')]
+        assert OkAdapter.calls == [(False, '/base/2', '/base/2', '/base/2/pc/2', '/base/2/cc/2')]
+
+    def test_converter_uses_relative_subdirectories_as_given(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', '/base/2')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_2', 'invalid')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_2', 'pc')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_2', 'cc')
+
+        main._run_now()
+
+        assert OkAdapter.calls == [(False, '/base/2', '/base/2/invalid', '/base/2/pc', '/base/2/cc')]
 
     def test_both_converters_run_when_enabled(self, env):
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
