@@ -9,7 +9,7 @@ from vccvdv457export.adapter.base import BaseAdapter
 
 
 class DummyAdapter(BaseAdapter):
-    def process(self, ddb, output_directory, dubious_output_directory):
+    def process(self, ddb, output_directory, invalid_output_directory):
         pass
 
 
@@ -184,10 +184,10 @@ class TestExport:
 
     @pytest.fixture
     def dirs(self, tmp_path):
-        success, dubious = tmp_path / 'success', tmp_path / 'dubious'
+        success, invalid = tmp_path / 'success', tmp_path / 'invalid'
         success.mkdir()
-        dubious.mkdir()
-        return str(success), str(dubious)
+        invalid.mkdir()
+        return str(success), str(invalid)
 
     def test_writes_one_xml_per_trip(self, dirs):
         DummyAdapter()._export({(20250101, 1, 'v1'): '<a/>', (20250101, 2, 'v1'): '<b/>'}, *dirs)
@@ -203,7 +203,7 @@ class TestExport:
 
         assert os.listdir(dirs[0]) == [] and os.listdir(dirs[1]) == []
 
-    def test_error_report_moves_output_to_dubious_directory(self, dirs):
+    def test_error_report_moves_output_to_invalid_directory(self, dirs):
         adapter = DummyAdapter()
         adapter._report(20250101, 1, 'v1', 903, 'ERROR', 'doors')
 
@@ -237,7 +237,7 @@ class TestExport:
 
         assert len(os.listdir(dirs[0])) == 1
 
-    @pytest.mark.xfail(strict=True, reason="Known bug: output directory stays 'dubious' for all following trips")
+    @pytest.mark.xfail(strict=True, reason="Known bug: output directory stays 'invalid' for all following trips")
     def test_error_in_one_trip_does_not_move_following_trips(self, dirs):
         adapter = DummyAdapter()
         adapter._report(20250101, 1, 'v1', 903, 'ERROR', 'doors')
@@ -280,7 +280,7 @@ class TestExport:
         with open(os.path.join(dirs[0], report_file)) as f:
             assert len(f.read().strip().splitlines()) == 1
 
-    def test_report_file_follows_xml_into_dubious_directory(self, dirs):
+    def test_report_file_follows_xml_into_invalid_directory(self, dirs):
         adapter = DummyAdapter('archive', reports_create=True)
         adapter._report(20250101, 1, 'v1', 903, 'ERROR', 'doors')
 

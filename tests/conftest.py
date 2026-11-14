@@ -154,10 +154,10 @@ def make_ddb(trip: Trip, primary_rows: list | None = None, secondary: dict | Non
 
 @pytest.fixture
 def dirs(tmp_path):
-    success, dubious = tmp_path / 'success', tmp_path / 'dubious'
+    success, invalid = tmp_path / 'success', tmp_path / 'invalid'
     success.mkdir()
-    dubious.mkdir()
-    return str(success), str(dubious)
+    invalid.mkdir()
+    return str(success), str(invalid)
 
 
 @pytest.fixture

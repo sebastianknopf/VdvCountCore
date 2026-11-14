@@ -177,7 +177,7 @@ class TestProcess:
             assert len(parse(f.read())['PassengerCountingEvent']) == 3
         assert os.listdir(dirs[1]) == []
 
-    def test_data_with_errors_goes_to_dubious_directory(self, trip, dirs):
+    def test_data_with_errors_goes_to_invalid_directory(self, trip, dirs):
         DefaultAdapter('archive').process(make_ddb(trip, trip_rows(doors=('1',))), *dirs)
 
         assert os.listdir(dirs[0]) == []

@@ -20,12 +20,12 @@ class OkAdapter:
     def __init__(self, archive_name, create_reports):
         self.archive_name, self.create_reports = archive_name, create_reports
 
-    def process(self, ddb, output_directory, dubious_output_directory):
-        OkAdapter.calls.append((self.create_reports, output_directory, dubious_output_directory))
+    def process(self, ddb, output_directory, invalid_output_directory):
+        OkAdapter.calls.append((self.create_reports, output_directory, invalid_output_directory))
 
 
 class FailingAdapter(OkAdapter):
-    def process(self, ddb, output_directory, dubious_output_directory):
+    def process(self, ddb, output_directory, invalid_output_directory):
         raise RuntimeError('conversion failed')
 
 
@@ -33,6 +33,10 @@ class FailingAdapter(OkAdapter):
 def env(monkeypatch):
     for name in ('VCC_VDV457_EXPORT_CONVERT_2', 'VCC_VDV457_EXPORT_CONVERT_3', 'VCC_VDV457_EXPORT_REPORT_2',
                  'VCC_VDV457_EXPORT_REPORT_3', 'VCC_VDV457_EXPORT_ADAPTER_TYPE_2', 'VCC_VDV457_EXPORT_ADAPTER_TYPE_3',
+                 'VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', 'VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_3',
+                 'VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_2', 'VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_3',
+                 'VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_2', 'VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_3',
+                 'VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_2', 'VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_3',
                  'VCC_DEBUG'):
         monkeypatch.delenv(name, raising=False)
 
@@ -82,7 +86,7 @@ class TestRunNow:
 
         main._run_now()
 
-        assert OkAdapter.calls == [(False, '/data/vdv4572/success', '/data/vdv4572/dubious')]
+        assert OkAdapter.calls == [(False, '/data/vdv4572', '/data/vdv4572')]
         assert failed(env) is False
 
     def test_vdv4573_converter_uses_its_directories(self, env):
@@ -90,7 +94,16 @@ class TestRunNow:
 
         main._run_now()
 
-        assert OkAdapter.calls == [(False, '/data/vdv4573/success', '/data/vdv4573/dubious')]
+        assert OkAdapter.calls == [(False, '/data/vdv4573', '/data/vdv4573')]
+
+    def test_converter_uses_configured_invalid_directory(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', '/base/2')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_2', '/invalid/2')
+
+        main._run_now()
+
+        assert OkAdapter.calls == [(False, '/base/2', '/invalid/2')]
 
     def test_both_converters_run_when_enabled(self, env):
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
@@ -133,7 +146,7 @@ class TestRunNow:
         main._run_now()
 
         assert len(OkAdapter.calls) == 1
-        assert OkAdapter.calls[0][1] == '/data/vdv4573/success'
+        assert OkAdapter.calls[0][1] == '/data/vdv4573'
         assert failed(env) is True
 
     def test_unknown_adapter_type_marks_archive_as_failed(self, env):
