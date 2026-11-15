@@ -27,6 +27,10 @@ def _resolve_relative_directory(base_directory: str, directory: str|None) -> str
 
     return posixpath.normpath(posixpath.join(base_directory, relative_directory))
 
+def _ensure_directory(directory: str|None) -> None:
+    if directory is not None:
+        os.makedirs(directory, exist_ok=True)
+
 def _get_output_directories(converter_suffix: str) -> tuple[str, str, str|None, str|None]:
     base_directory: str = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_{converter_suffix}', f'/data/vdv457{converter_suffix}')
     invalid_directory_env: str|None = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_{converter_suffix}')
@@ -36,6 +40,11 @@ def _get_output_directories(converter_suffix: str) -> tuple[str, str, str|None, 
     invalid_directory: str = base_directory if invalid_directory_env is None else _resolve_relative_directory(base_directory, invalid_directory_env)
     passenger_counting_directory = _resolve_relative_directory(base_directory, passenger_counting_directory)
     comparison_counting_directory = _resolve_relative_directory(base_directory, comparison_counting_directory)
+
+    _ensure_directory(base_directory)
+    _ensure_directory(invalid_directory)
+    _ensure_directory(passenger_counting_directory)
+    _ensure_directory(comparison_counting_directory)
 
     return base_directory, invalid_directory, passenger_counting_directory, comparison_counting_directory
 

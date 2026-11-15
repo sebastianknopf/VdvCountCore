@@ -1,4 +1,5 @@
 import pytest
+import os
 
 import vccvdv457export.__main__ as main
 
@@ -231,3 +232,39 @@ class TestRun:
 
         with pytest.raises(Exception):
             main.run()
+
+
+class TestOutputDirectories:
+
+    def test_creates_base_and_relative_subdirectories_on_demand(self, monkeypatch, tmp_path):
+        base = tmp_path / 'exports'
+        monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', str(base))
+        monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_2', 'invalid')
+        monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_2', 'pc')
+        monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_2', 'cc')
+
+        output_directory, invalid_output_directory, passenger_output_directory, comparison_output_directory = main._get_output_directories('2')
+
+        assert output_directory == str(base)
+        assert invalid_output_directory.replace('\\', '/') == str(base / 'invalid').replace('\\', '/')
+        assert passenger_output_directory.replace('\\', '/') == str(base / 'pc').replace('\\', '/')
+        assert comparison_output_directory.replace('\\', '/') == str(base / 'cc').replace('\\', '/')
+        assert os.path.isdir(output_directory)
+        assert os.path.isdir(invalid_output_directory)
+        assert os.path.isdir(passenger_output_directory)
+        assert os.path.isdir(comparison_output_directory)
+
+    def test_creates_only_base_and_default_invalid_when_optionals_missing(self, monkeypatch, tmp_path):
+        base = tmp_path / 'exports'
+        monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_3', str(base))
+        monkeypatch.delenv('VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_3', raising=False)
+        monkeypatch.delenv('VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_3', raising=False)
+        monkeypatch.delenv('VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_3', raising=False)
+
+        output_directory, invalid_output_directory, passenger_output_directory, comparison_output_directory = main._get_output_directories('3')
+
+        assert output_directory == str(base)
+        assert invalid_output_directory == str(base)
+        assert passenger_output_directory is None
+        assert comparison_output_directory is None
+        assert os.path.isdir(output_directory)
