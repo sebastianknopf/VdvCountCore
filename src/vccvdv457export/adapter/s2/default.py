@@ -8,6 +8,7 @@ from typing import Tuple
 from xmltodict import unparse
 
 from vcclib.common import isoformattime
+from vcclib.common import isoformatdatetime
 from vcclib.dataclasses import PassengerCountingEvent
 from vcclib.dataclasses import CountingSequence
 from vcclib.dataclasses import Trip
@@ -130,13 +131,13 @@ class DefaultAdapter(BaseAdapter):
                     '@QueryType': 'departure',
                     'SequentialNumber': i + 1,
                     'TimeStamp': {
-                        'Value': pce.end_timestamp().isoformat()
+                        'Value': isoformatdatetime(pce.end_timestamp())
                     },
                     'TimeStampEventStart': {
-                        'Value': pce.begin_timestamp().isoformat()
+                        'Value': isoformatdatetime(pce.begin_timestamp())
                     },
                     'TimeStampEventEnd': {
-                        'Value': pce.end_timestamp().isoformat()
+                        'Value': isoformatdatetime(pce.end_timestamp())
                     }
                 }
             }
@@ -257,8 +258,8 @@ class DefaultAdapter(BaseAdapter):
                         cs: CountingSequence = next((cs for cs in pce.counting_sequences if cs.counting_area_id == counting_area_id and cs.door_id == door_id and cs.object_class == object_class), None)
                         if cs is not None:
 
-                            counting_xml['CountInfo']['DoorOpenTime']['Value'] = cs.begin_timestamp.isoformat()
-                            counting_xml['CountInfo']['DoorClosingTime']['Value'] = cs.end_timestamp.isoformat()
+                            counting_xml['CountInfo']['DoorOpenTime']['Value'] = isoformatdatetime(cs.begin_timestamp)
+                            counting_xml['CountInfo']['DoorClosingTime']['Value'] = isoformatdatetime(cs.end_timestamp)
 
                             count_xml: dict = {
                                 'ObjectClass': object_class,

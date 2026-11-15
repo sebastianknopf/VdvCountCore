@@ -8,6 +8,7 @@ from typing import Set
 from typing import Tuple
 from xmltodict import unparse
 
+from vcclib.common import isoformatdatetime
 from vcclib.dataclasses import PassengerCountingEvent
 from vcclib.dataclasses import CountingSequence
 from vcclib.dataclasses import Trip
@@ -111,8 +112,8 @@ class DefaultAdapter(BaseAdapter):
                 'HeaderServiceJourney': {
                     'ServiceJourneyID': trip_id,
                     'DataType': 'RawData',
-                    'ServiceJourneyDepartureTime': departure_time.isoformat(),
-                    'ServiceJourneyDestinationTime': destination_time.isoformat(),
+                    'ServiceJourneyDepartureTime': isoformatdatetime(departure_time),
+                    'ServiceJourneyDestinationTime': isoformatdatetime(destination_time),
                     'Origin': origin,
                     'Destination': destination,
                     'Line': {
@@ -171,13 +172,13 @@ class DefaultAdapter(BaseAdapter):
                         '@QueryType': 'departure',
                         'SequentialNumber': i + 1,
                         'TimeStamp': {
-                            'Value': pce.end_timestamp().isoformat()
+                            'Value': isoformatdatetime(pce.end_timestamp())
                         },
                         'TimeStampEventStart': {
-                            'Value': pce.begin_timestamp().isoformat()
+                            'Value': isoformatdatetime(pce.begin_timestamp())
                         },
                         'TimeStampEventEnd': {
-                            'Value': pce.end_timestamp().isoformat()
+                            'Value': isoformatdatetime(pce.end_timestamp())
                         }
                     },
                     'Counting': list()

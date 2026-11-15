@@ -16,3 +16,6 @@ def isoformattime(dt: datetime) -> str:
         iso = iso[:-2] + ":" + iso[-2:]
 
     return iso
+
+def isoformatdatetime(dt: datetime) -> str:
+    return dt.replace(microsecond=0).isoformat(timespec='seconds')
