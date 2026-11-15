@@ -34,7 +34,6 @@ class FailingAdapter(OkAdapter):
 def env(monkeypatch):
     for name in ('VCC_VDV457_EXPORT_CONVERT_2', 'VCC_VDV457_EXPORT_CONVERT_3', 'VCC_VDV457_EXPORT_REPORT_2',
                  'VCC_VDV457_EXPORT_REPORT_3', 'VCC_VDV457_EXPORT_ADAPTER_TYPE_2', 'VCC_VDV457_EXPORT_ADAPTER_TYPE_3',
-                 'VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', 'VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_3',
                  'VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_2', 'VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_3',
                  'VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_2', 'VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_3',
                  'VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_2', 'VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_3',
@@ -99,33 +98,38 @@ class TestRunNow:
 
     def test_converter_uses_configured_invalid_directory(self, env):
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
-        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', '/base/2')
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_2', '/invalid/2')
 
         main._run_now()
 
-        assert OkAdapter.calls == [(False, '/base/2', '/base/2/invalid/2', None, None)]
+        assert OkAdapter.calls == [(False, '/data/vdv4572', '/data/vdv4572/invalid/2', None, None)]
 
     def test_converter_uses_configured_counting_directories(self, env):
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
-        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', '/base/2')
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_2', '/pc/2')
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_2', '/cc/2')
 
         main._run_now()
 
-        assert OkAdapter.calls == [(False, '/base/2', '/base/2', '/base/2/pc/2', '/base/2/cc/2')]
+        assert OkAdapter.calls == [(False, '/data/vdv4572', '/data/vdv4572', '/data/vdv4572/pc/2', '/data/vdv4572/cc/2')]
 
     def test_converter_uses_relative_subdirectories_as_given(self, env):
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
-        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', '/base/2')
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_2', 'invalid')
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_2', 'pc')
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_2', 'cc')
 
         main._run_now()
 
-        assert OkAdapter.calls == [(False, '/base/2', '/base/2/invalid', '/base/2/pc', '/base/2/cc')]
+        assert OkAdapter.calls == [(False, '/data/vdv4572', '/data/vdv4572/invalid', '/data/vdv4572/pc', '/data/vdv4572/cc')]
+
+    def test_base_output_directory_env_is_ignored(self, env):
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
+        env['monkeypatch'].setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', '/ignored/base')
+
+        main._run_now()
+
+        assert OkAdapter.calls == [(False, '/data/vdv4572', '/data/vdv4572', None, None)]
 
     def test_both_converters_run_when_enabled(self, env):
         env['monkeypatch'].setenv('VCC_VDV457_EXPORT_CONVERT_2', 'true')
@@ -237,34 +241,32 @@ class TestRun:
 class TestOutputDirectories:
 
     def test_creates_base_and_relative_subdirectories_on_demand(self, monkeypatch, tmp_path):
-        base = tmp_path / 'exports'
-        monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', str(base))
         monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_2', 'invalid')
         monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_2', 'pc')
         monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_2', 'cc')
+        monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_2', str(tmp_path / 'ignored'))
 
         output_directory, invalid_output_directory, passenger_output_directory, comparison_output_directory = main._get_output_directories('2')
 
-        assert output_directory == str(base)
-        assert invalid_output_directory.replace('\\', '/') == str(base / 'invalid').replace('\\', '/')
-        assert passenger_output_directory.replace('\\', '/') == str(base / 'pc').replace('\\', '/')
-        assert comparison_output_directory.replace('\\', '/') == str(base / 'cc').replace('\\', '/')
-        assert os.path.isdir(output_directory)
-        assert os.path.isdir(invalid_output_directory)
-        assert os.path.isdir(passenger_output_directory)
-        assert os.path.isdir(comparison_output_directory)
+        assert output_directory == '/data/vdv4572'
+        assert invalid_output_directory == '/data/vdv4572/invalid'
+        assert passenger_output_directory == '/data/vdv4572/pc'
+        assert comparison_output_directory == '/data/vdv4572/cc'
+        assert os.path.isdir('/data/vdv4572')
+        assert os.path.isdir('/data/vdv4572/invalid')
+        assert os.path.isdir('/data/vdv4572/pc')
+        assert os.path.isdir('/data/vdv4572/cc')
 
     def test_creates_only_base_and_default_invalid_when_optionals_missing(self, monkeypatch, tmp_path):
-        base = tmp_path / 'exports'
-        monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_3', str(base))
+        monkeypatch.setenv('VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_3', str(tmp_path / 'ignored'))
         monkeypatch.delenv('VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_3', raising=False)
         monkeypatch.delenv('VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_3', raising=False)
         monkeypatch.delenv('VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_3', raising=False)
 
         output_directory, invalid_output_directory, passenger_output_directory, comparison_output_directory = main._get_output_directories('3')
 
-        assert output_directory == str(base)
-        assert invalid_output_directory == str(base)
+        assert output_directory == '/data/vdv4573'
+        assert invalid_output_directory == '/data/vdv4573'
         assert passenger_output_directory is None
         assert comparison_output_directory is None
-        assert os.path.isdir(output_directory)
+        assert os.path.isdir('/data/vdv4573')

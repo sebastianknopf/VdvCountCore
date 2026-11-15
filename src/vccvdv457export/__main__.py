@@ -32,7 +32,7 @@ def _ensure_directory(directory: str|None) -> None:
         os.makedirs(directory, exist_ok=True)
 
 def _get_output_directories(converter_suffix: str) -> tuple[str, str, str|None, str|None]:
-    base_directory: str = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_DIRECTORY_{converter_suffix}', f'/data/vdv457{converter_suffix}')
+    base_directory: str = f'/data/vdv457{converter_suffix}'
     invalid_directory_env: str|None = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_INVALID_DIRECTORY_{converter_suffix}')
     passenger_counting_directory: str|None = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_PASSENGER_COUNTING_DIRECTORY_{converter_suffix}')
     comparison_counting_directory: str|None = os.getenv(f'VCC_VDV457_EXPORT_OUTPUT_COMPARISON_COUNTING_DIRECTORY_{converter_suffix}')
