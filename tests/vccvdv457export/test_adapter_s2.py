@@ -1,9 +1,11 @@
 import os
+from datetime import timedelta
 
 import pytest
 import xmltodict
 
-from conftest import TRIP_KEY as KEY, FakeDuckDB, make_ddb, make_row, trip_rows
+from conftest import (TRIP_KEY as KEY, BASE_TIME, FakeDuckDB, make_counting_sequence,
+                      make_ddb, make_pce, make_row, trip_rows)
 from vcclib.version import version
 from vccvdv457export.adapter.s2.default import DefaultAdapter
 
@@ -100,6 +102,31 @@ class TestTransform:
         assert header['TimeStampEventStart']['Value'] == '2025-01-01T08:00:00+00:00'
         assert header['TimeStampEventEnd']['Value'] == '2025-01-01T08:00:20+00:00'
         assert header['TimeStamp']['Value'] == header['TimeStampEventEnd']['Value']
+
+    def test_microseconds_are_not_exported_in_event_and_door_timestamps(self, trip):
+        adapter = DefaultAdapter()
+        stop = trip.stop_times[0].stop
+        pce = make_pce(
+            stop,
+            make_counting_sequence(
+                BASE_TIME + timedelta(microseconds=123456),
+                BASE_TIME + timedelta(seconds=20, microseconds=654321),
+                door_id='1',
+                count_in=1
+            )
+        )
+        pce.latitude = stop.latitude
+        pce.longitude = stop.longitude
+
+        _, xml, _ = adapter._transform(FakeDuckDB(trip, {}), *KEY, [pce])
+        message = parse(xml)
+        header = message['PassengerCountingEvent'][0]['HeaderCountingEvent']
+        counting = message['PassengerCountingEvent'][0]['CountingArea'][0]['Counting'][0]
+
+        assert header['TimeStampEventStart']['Value'] == '2025-01-01T08:00:00+00:00'
+        assert header['TimeStampEventEnd']['Value'] == '2025-01-01T08:00:20+00:00'
+        assert counting['CountInfo']['DoorOpenTime']['Value'] == '2025-01-01T08:00:00+00:00'
+        assert counting['CountInfo']['DoorClosingTime']['Value'] == '2025-01-01T08:00:20+00:00'
 
     def test_gnss_position_and_time(self, trip):
         message, _ = self.transform(trip)

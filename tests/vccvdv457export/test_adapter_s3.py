@@ -159,6 +159,19 @@ class TestTransform:
         assert header['Line']['LineName']['Value'] == '1'
         assert header['Line']['DirectionType'] == '1'
 
+    def test_microseconds_are_not_exported_in_journey_and_event_timestamps(self, trip):
+        trip.stop_times[0].departure_time = trip.stop_times[0].departure_time.replace(microsecond=123456)
+        trip.stop_times[-1].arrival_time = trip.stop_times[-1].arrival_time.replace(microsecond=654321)
+
+        journey, _ = self.transform(trip)
+        header = journey['HeaderServiceJourney']
+        event_header = journey['PassengerCountingMessage']['PassengerCountingEvent'][0]['CountingArea'][0]['HeaderCounting']
+
+        assert header['ServiceJourneyDepartureTime'] == '2025-01-01T08:00:30+00:00'
+        assert header['ServiceJourneyDestinationTime'] == '2025-01-01T08:10:00+00:00'
+        assert event_header['TimeStampEventStart']['Value'] == '2025-01-01T08:00:00+00:00'
+        assert event_header['TimeStampEventEnd']['Value'] == '2025-01-01T08:00:20+00:00'
+
     def test_message_header_contains_vehicle(self, trip):
         journey, _ = self.transform(trip)
 
